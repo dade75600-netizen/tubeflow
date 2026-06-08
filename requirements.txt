@@ -1,0 +1,16 @@
+# TubeFlow Backend Requirements (loosened constraints)
+
+fastapi
+uvicorn
+python-dotenv
+pyyaml
+requests
+pillow
+edge-tts
+google-genai
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+httpx
+jinja2
+python-multipart

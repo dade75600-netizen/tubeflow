@@ -1,0 +1,24 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Local Credentials and Secrets (DO NOT COMMIT)
+.env
+client_secrets.json
+token.json
+
+# Temporary working directories
+temp/
+scratch/
+
+# Generated Video and Image Outputs (large files)
+outputs/
+*.mp4
+*.jpg
+*.ass
+*.raw.jpg
+*.mp3
+
+# Log files
+*.log

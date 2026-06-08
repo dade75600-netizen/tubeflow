@@ -1,0 +1,74 @@
+# TubeFlow Project Configuration
+# Tailored for MilitaryDeepOps YouTube Shorts Channel
+
+channel:
+  name: "MilitaryDeepOps"
+  language: "en" # Script and search language
+  niche: "military aviation, fighter jets, stealth aircraft, and modern combat tactical operations"
+  tone: "dramatic, intense, educational, epic, high-energy"
+
+sourcing:
+  mode: "queue" # Options: "queue" (uses topics_queue.txt) or "trends" (auto-scrapes)
+  keywords:
+    - "fighter jet dogfight"
+    - "stealth fighter jet"
+    - "f-22 raptor mach speed"
+    - "f-35 lightning stealth"
+    - "aircraft carrier takeoff"
+    - "stealth bomber mission"
+    - "military pilot cockpit g-force"
+    - "f-15 eagle speed"
+    - "supersonic boom flight"
+    - "a-10 warthog brrrt"
+
+video:
+  width: 1080
+  height: 1920
+  aspect_ratio: "9:16"
+  max_duration_seconds: 50
+  privacy_status: "public" # Options: "public", "private", "unlisted"
+  
+  # Styling for Dynamic Subtitles (burnt into the video)
+  subtitles:
+    font_name: "Impact"       # Must be installed on the system (e.g. C:\Windows\Fonts\impact.ttf)
+    font_size: 70
+    color: "#FFFF00"          # Yellow for high visibility/retention (restored from two weeks ago)
+    stroke_color: "#000000"   # Black outline
+    stroke_width: 5
+    position: "center"        # Center of screen (horizontal and vertical center)
+    words_per_line: 2         # Short, punchy dynamic text
+
+voice:
+  # Edge-TTS Neural Voice: deep commanding male en-US voice
+  name: "en-US-GuyNeural"
+  rate: "+5%"               # Slightly faster paced
+  pitch: "+0Hz"
+
+music:
+  background_volume: 0.06     # Lower volume to guarantee voiceover clarity (prevent retention drops)
+  default_track: "assets/music/military_hybrid.mp3"
+
+scheduler:
+  # Schedule settings:
+  # times: List of hours and minutes in 24h format (local time) for daily uploads
+  # days: List of days (0=Monday, 1=Tuesday, 2=Wednesday, 3=Thursday, 4=Friday, 5=Saturday, 6=Sunday)
+  times:
+    - "12:00"
+    - "18:00"
+  days: [0, 1, 2, 3, 4, 5, 6] # Every day of the week
+  enabled: true
+
+notifications:
+  telegram:
+    enabled: false # Set true once telegram keys are added in .env
+
+tiktok:
+  enabled: true
+
+affiliate:
+  # Affiliate links to include in descriptions and comments
+  links:
+    - label: "Best Tactical Gear & Apparel"
+      url: "https://amzn.to/3OaX5bX"
+    - label: "Top Military Aircraft Models & Books"
+      url: "https://amzn.to/3T8yKlZ"

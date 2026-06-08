@@ -1,0 +1,329 @@
+import os
+import sys
+import time
+import yaml
+import shutil
+from dotenv import load_dotenv
+
+# Reconfigure stdout/stderr to UTF-8 to prevent charmap/encoding issues on Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+if hasattr(sys.stderr, 'reconfigure'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+# Import services
+from backend.services.youtube_publisher import YouTubePublisher
+from backend.services.tiktok_publisher import TikTokPublisher
+from backend.services.script_generator import ScriptGenerator
+from backend.services.media_processor import MediaProcessor
+from backend.services.video_editor import VideoEditor
+from backend.services.thumbnail_creator import ThumbnailCreator
+from backend.services.notifier import Notifier
+
+# Load environment variables from .env
+load_dotenv()
+
+class Pipeline:
+    def __init__(self, config_path: str = "config.yaml"):
+        self.config_path = config_path
+        self.config = self.load_config()
+        self.queue_file = "topics_queue.txt"
+
+    def load_config(self) -> dict:
+        """Loads configuration from yaml."""
+        if os.path.exists(self.config_path):
+            with open(self.config_path, 'r') as f:
+                return yaml.safe_load(f)
+        return {}
+
+    def get_next_topic(self) -> str:
+        """
+        Reads the topics queue file, pops the first non-comment topic,
+        rewrites the queue file without it, and returns the topic.
+        """
+        if not os.path.exists(self.queue_file):
+            print(f"Queue file {self.queue_file} not found. Creating a blank one.")
+            with open(self.queue_file, 'w') as f:
+                f.write("# Add your video topics here, one per line.\n")
+            return None
+
+        with open(self.queue_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        topic = None
+        new_lines = []
+        
+        # Parse lines
+        for line in lines:
+            stripped = line.strip()
+            if not topic and stripped and not stripped.startswith("#"):
+                topic = stripped
+                # Log this topic as done in a done file
+                self.log_completed_topic(topic)
+            else:
+                new_lines.append(line)
+
+        # Rewrite queue file
+        with open(self.queue_file, 'w', encoding='utf-8') as f:
+            f.writelines(new_lines)
+
+        return topic
+
+    def log_completed_topic(self, topic: str):
+        """Appends completed topic to a history file."""
+        history_file = "topics_done.txt"
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        with open(history_file, 'a', encoding='utf-8') as f:
+            f.write(f"[{timestamp}] {topic}\n")
+
+    def run(self, manual_topic: str = None) -> dict:
+        """
+        Runs the complete automated YouTube video production and publishing pipeline.
+        Returns a status dictionary with results.
+        """
+        start_time = time.time()
+        print("\n" + "="*50)
+        print("TUBEFLOW: STARTING CONTENT PIPELINE RUN")
+        print("="*50)
+
+        # 1. Resolve Topic
+        topic = manual_topic or self.get_next_topic()
+        if not topic:
+            msg = "No topics found in queue. Add topics to topics_queue.txt to proceed."
+            print(msg)
+            return {"success": False, "error": msg}
+
+        print(f"Processing Topic: '{topic}'")
+
+        # Create temporary working directory for this run
+        run_id = f"video_{int(time.time())}"
+        temp_dir = os.path.join("temp", run_id)
+        os.makedirs(temp_dir, exist_ok=True)
+        os.makedirs("outputs", exist_ok=True)
+
+        final_video_path = os.path.join("outputs", f"{run_id}.mp4")
+        final_thumbnail_path = os.path.join("outputs", f"{run_id}.jpg")
+
+        # Instantiate Services
+        script_gen = ScriptGenerator(config_path=self.config_path)
+        media_proc = MediaProcessor(config_path=self.config_path)
+        video_edit = VideoEditor(config_path=self.config_path)
+        thumb_creator = ThumbnailCreator(config_path=self.config_path)
+        publisher = YouTubePublisher()
+        tiktok_publisher = TikTokPublisher()
+        notifier = Notifier()
+
+        try:
+            # Step 1: Generate Script
+            max_retries = 5
+            retry_delay = 15
+            script = None
+            
+            for attempt in range(1, max_retries + 1):
+                try:
+                    script = script_gen.generate_script(topic)
+                    break
+                except Exception as e:
+                    print(f"Attempt {attempt} to generate script failed: {e}")
+                    if attempt < max_retries:
+                        print(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                    else:
+                        raise Exception(f"Failed to generate script after {max_retries} attempts. Last error: {e}")
+
+            print(f"Script generated successfully. Title: '{script.title}'")
+            print(f"Narration Length: {len(script.scenes)} scenes, total length approx. {sum(s.duration for s in script.scenes):.1f}s.")
+
+            # Step 2: Generate Voiceover Audio
+            voiceover_path = os.path.join(temp_dir, "voiceover.mp3")
+            media_proc.generate_voiceover_sync(script.voiceover_text, voiceover_path)
+
+            # Step 3: Fetch Stock Video Clips
+            clips_paths = []
+            for scene in script.scenes:
+                clip_filename = f"scene_{scene.scene_number}.mp4"
+                clip_path = os.path.join(temp_dir, clip_filename)
+                
+                # Sourcing video matching the search query
+                success = media_proc.fetch_stock_video(scene.search_query, clip_path, scene.duration)
+                
+                # If search fails, retry with a broader query or fallback
+                if not success:
+                    fallback_query = "military aviation"
+                    print(f"Retrying scene {scene.scene_number} with fallback: '{fallback_query}'")
+                    success = media_proc.fetch_stock_video(fallback_query, clip_path, scene.duration)
+                
+                if success and os.path.exists(clip_path):
+                    clips_paths.append(clip_path)
+                else:
+                    raise Exception(f"Failed to source a video clip for scene {scene.scene_number}: '{scene.search_query}'")
+
+            # Step 4: Compile Final Video (Audio + Video + Subtitles)
+            import random
+            
+            default_music_path = self.config.get("music", {}).get("default_track", "assets/music/military_hybrid.mp3")
+            music_dir = os.path.dirname(default_music_path)
+            if not os.path.exists(music_dir):
+                music_dir = "assets/music"
+            
+            bg_music_path = None
+            if os.path.exists(music_dir):
+                tracks = [os.path.join(music_dir, f) for f in os.listdir(music_dir) if f.lower().endswith('.mp3')]
+                if tracks:
+                    # Non-repeating track selector logic
+                    history_file = "music_history.txt"
+                    used_tracks = []
+                    if os.path.exists(history_file):
+                        try:
+                            with open(history_file, 'r', encoding='utf-8') as h_f:
+                                used_tracks = [line.strip() for line in h_f.readlines() if line.strip()]
+                        except Exception as h_err:
+                            print(f"Error reading music history: {h_err}")
+                    
+                    available_tracks = [t for t in tracks if t not in used_tracks]
+                    if not available_tracks:
+                        print("All background music tracks have been used. Resetting music history cycle...")
+                        available_tracks = tracks
+                        used_tracks = []
+                        
+                    bg_music_path = random.choice(available_tracks)
+                    print(f"Selected background music track for this video: '{os.path.basename(bg_music_path)}'")
+                    
+                    # Record the selection
+                    used_tracks.append(bg_music_path)
+                    try:
+                        with open(history_file, 'w', encoding='utf-8') as h_f:
+                            h_f.write("\n".join(used_tracks) + "\n")
+                    except Exception as h_err:
+                        print(f"Error writing music history: {h_err}")
+            
+            if not bg_music_path:
+                if os.path.exists(default_music_path):
+                    bg_music_path = default_music_path
+                else:
+                    print("No background music tracks found. Proceeding without background music.")
+                    bg_music_path = ""
+
+            render_success = video_edit.compile_video(
+                script=script,
+                clips_paths=clips_paths,
+                voiceover_path=voiceover_path,
+                background_path=bg_music_path,
+                output_path=final_video_path
+            )
+
+            if not render_success or not os.path.exists(final_video_path):
+                raise Exception("FFmpeg failed to compile the final video.")
+
+            print(f"Video compiled successfully! Saved to {final_video_path}")
+
+            # Step 5: Create Thumbnail
+            # Use script title or topic keywords for thumbnail
+            thumbnail_success = thumb_creator.create_thumbnail(topic, final_thumbnail_path)
+            if not thumbnail_success or not os.path.exists(final_thumbnail_path):
+                print("Warning: Thumbnail generation failed. Proceeding without custom thumbnail.")
+                final_thumbnail_path = None
+
+            # Step 6: Publish to YouTube
+            video_id = None
+            uploaded = False
+            
+            if publisher.is_authorized():
+                print("YouTube channel authorized. Starting upload...")
+                
+                # Format description with affiliate links at the very top (first 3 lines)
+                affiliate_links = self.config.get("affiliate", {}).get("links", [])
+                affiliate_desc = ""
+                if affiliate_links:
+                    affiliate_desc = "🔥 Special Offers & Gear:\n"
+                    for item in affiliate_links:
+                        label = item.get("label", "Check out")
+                        url = item.get("url", "")
+                        affiliate_desc += f"👉 {label}: {url}\n"
+                    affiliate_desc += "\n"
+                
+                description = affiliate_desc + script.description
+                tags = script.tags
+                
+                # Upload video (read privacy status from config, fallback to public)
+                privacy = self.config.get("video", {}).get("privacy_status", "public")
+                video_id = publisher.upload_video(
+                    file_path=final_video_path,
+                    title=script.title,
+                    description=description,
+                    tags=tags,
+                    privacy_status=privacy
+                )
+                uploaded = True
+                print(f"Video uploaded to YouTube. Video ID: {video_id}")
+                
+                # Post affiliate links as the first comment
+                if video_id and affiliate_links:
+                    affiliate_comment = "🔥 Get the ultimate military gear and models here:\n"
+                    for item in affiliate_links:
+                        label = item.get("label", "Click here")
+                        url = item.get("url", "")
+                        affiliate_comment += f"👉 {label}: {url}\n"
+                    
+                    try:
+                        print("Posting affiliate links comment...")
+                        publisher.post_comment(video_id, affiliate_comment)
+                    except Exception as c_err:
+                        print(f"Could not post affiliate comment: {c_err}")
+            else:
+                print("YouTube channel is NOT authorized. Video saved locally in outputs/ folder. Upload skipped.")
+
+            # Step 6.1: Publish to TikTok
+            if self.config.get("tiktok", {}).get("enabled", True):
+                print("TikTok publishing is enabled.")
+                tiktok_publisher.upload_video(
+                    file_path=final_video_path,
+                    title=script.title,
+                    description=script.description,
+                    tags=script.tags
+                )
+                
+            # Step 7: Send Notification
+            if notifier.enabled:
+                title_alert = script.title
+                # If upload failed/skipped, notify local save
+                notif_video_id = video_id if uploaded else "LOCAL_ONLY"
+                notifier.send_notification(
+                    title=title_alert,
+                    video_id=notif_video_id,
+                    thumbnail_path=final_thumbnail_path
+                )
+
+            # Cleanup temp directory
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            print(f"Temporary folder {temp_dir} cleaned up.")
+            
+            duration_taken = time.time() - start_time
+            print(f"Pipeline completed successfully in {duration_taken:.1f}s.")
+            
+            return {
+                "success": True,
+                "topic": topic,
+                "title": script.title,
+                "video_path": final_video_path,
+                "thumbnail_path": final_thumbnail_path,
+                "uploaded": uploaded,
+                "video_id": video_id,
+                "duration_seconds": duration_taken
+            }
+
+        except Exception as e:
+            print(f"Pipeline run encountered an error: {e}")
+            # Cleanup temp folder even on failure
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            return {
+                "success": False,
+                "topic": topic,
+                "error": str(e)
+            }
