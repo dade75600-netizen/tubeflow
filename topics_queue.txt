@@ -2,7 +2,6 @@
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
 
-Why aircraft carriers are floating military cities
 The legendary F-14 Tomcat and its legacy
 How the F-35 Lightning II Hacks the Battlefield
 Why the MiG-25 Foxbat is Insanely Fast
