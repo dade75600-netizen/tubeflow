@@ -2,14 +2,12 @@
 [2026-06-07 12:00:09] Why the A-10 Warthog refuses to die
 [2026-06-07 18:19:43] The Dark Truth behind the SR-71 Blackbird
 [2026-06-08 20:32:14] How close did we get to World War III in the skies?
-[2026-06-08 21:43:08] Inside the Cockpit of an F-35 Lightning II
 [2026-06-08 21:24:09] The Supersonic B-1 Lancer in action
+[2026-06-08 21:43:08] Inside the Cockpit of an F-35 Lightning II
+[2026-06-09 13:22:20] The Supersonic B-1 Lancer in action
 [2026-06-09 17:36:18] How Fighter Jets survive high-G dogfights
-[2026-06-09 22:02:33] The mystery of stealth radar signature
-[2026-06-10 19:45:30] Why aircraft carriers are floating military cities
-[2026-06-10 22:32:55] The legendary F-14 Tomcat and its legacy
-[2026-06-11 19:45:32] How the F-35 Lightning II Hacks the Battlefield
-[2026-06-11 22:30:51] Why the MiG-25 Foxbat is Insanely Fast
-[2026-06-12 17:55:05] Why the B-2 Spirit Costs 2 Billion Dollars
-[2026-06-12 22:06:39] The Day a Swedish Viggen Locked on an SR-71
-[2026-06-13 15:52:42] How Stealth Fighter Jets Evade Heat-Seeking Missiles
+[2026-06-09 20:25:37] The mystery of stealth radar signature
+[2026-06-10 13:06:18] Why aircraft carriers are floating military cities
+[2026-06-10 20:06:31] The legendary F-14 Tomcat and its legacy
+[2026-06-11 12:20:04] How the F-35 Lightning II Hacks the Battlefield
+[2026-06-12 12:45:04] Why the MiG-25 Foxbat is Insanely Fast

@@ -52,7 +52,7 @@ jobs:
 
       - name: Execute video generation pipeline
         run: |
-          python -c "from backend.pipeline import Pipeline; Pipeline().run()"
+          python -c "from backend.pipeline import Pipeline; res = Pipeline().run(); import sys; sys.exit(0 if res.get('success') else 1)"
 
       - name: Commit and push queue updates
         run: |

@@ -9,3 +9,9 @@ assets/music\abandoned__infinoise_-_night_caller_ft_project_nightfall.mp3
 assets/music\andromedik_-_let_me_in.mp3
 assets/music\jamendo-581020.mp3
 assets/music\axol__max_hurrell_-_shots_fired.mp3
+assets/music\military_hybrid.mp3
+assets/music\3rd_prototype_-_feel_so_good.mp3
+assets/music\alex_skrindo__miza_-_thinkin_ncs_release_radio_edit.mp3
+assets/music\acejax_feat_danilyon_-_by_my_side.mp3
+assets/music\cinematic_drums.mp3
+assets/music\andromedik_-_with_me.mp3

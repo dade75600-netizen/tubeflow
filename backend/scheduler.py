@@ -1,10 +1,44 @@
 import os
+import json
 import time
 import datetime
 import yaml
 import traceback
 import random
 from backend.pipeline import Pipeline
+
+STATE_FILE = os.path.join("temp", "scheduler_state.json")
+
+def load_state() -> set:
+    """Loads the set of completed run slots from a JSON state file."""
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                completed = set()
+                for item in data.get("completed", []):
+                    try:
+                        date_str, time_str = item.split("|")
+                        y, m, d = map(int, date_str.split("-"))
+                        completed.add((datetime.date(y, m, d), time_str))
+                    except ValueError:
+                        continue
+                return completed
+        except Exception as e:
+            print(f"Error loading scheduler state: {e}")
+    return set()
+
+def save_state(completed_runs: set):
+    """Saves the completed run slots set to a JSON state file."""
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    try:
+        data = {
+            "completed": [f"{key[0].strftime('%Y-%m-%d')}|{key[1]}" for key in completed_runs]
+        }
+        with open(STATE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print(f"Error saving scheduler state: {e}")
 
 def load_scheduler_config(config_path="config.yaml") -> dict:
     """Loads the scheduler section from config.yaml."""
@@ -23,8 +57,8 @@ def start_scheduler():
     print("=" * 60)
     
     pipeline = Pipeline()
-    # Track completed runs as a set of (date, time_str)
-    completed_runs = set()
+    # Load completed runs from persistent JSON state file
+    completed_runs = load_state()
     
     while True:
         try:
@@ -41,7 +75,10 @@ def start_scheduler():
             current_date = now.date()
             
             # 3. Clean up older dates from completed_runs to prevent memory leak
+            old_len = len(completed_runs)
             completed_runs = {key for key in completed_runs if key[0] >= current_date}
+            if len(completed_runs) != old_len:
+                save_state(completed_runs)
             
             # 4. Get target times (default to 12:00 and 18:00)
             target_times = sched_cfg.get("times", ["12:00", "18:00"])
@@ -56,13 +93,18 @@ def start_scheduler():
                     print(f"Invalid time format in config: '{t_str}'. Skipping.")
                     continue
                 
-                # Check if current time matches this target slot, and we haven't run it today
+                # Construct target datetime for today
+                target_dt = datetime.datetime.combine(current_date, datetime.time(target_hour, target_minute))
+                
+                # Check if current time is past target time, within a 2-hour grace period, and not yet run today
+                is_due = (now >= target_dt) and (now <= target_dt + datetime.timedelta(hours=2))
                 run_key = (current_date, t_str)
-                if now.hour == target_hour and now.minute == target_minute and run_key not in completed_runs:
-                    
+                
+                if is_due and run_key not in completed_runs:
                     if now.weekday() in allowed_days:
-                        # Mark this slot as completed immediately to prevent double trigger during delay sleep
+                        # Mark this slot as completed immediately and save state
                         completed_runs.add(run_key)
+                        save_state(completed_runs)
                         
                         # Generate human-like random delay (between 1 and 25 minutes)
                         delay_seconds = random.randint(60, 1500)

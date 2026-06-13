@@ -19,9 +19,11 @@ class VideoEditor:
 
     def resolve_ffmpeg(self) -> str:
         """Checks local bin/ first, then falls back to system path."""
-        local_ffmpeg = os.path.join("bin", "ffmpeg.exe")
-        if os.path.exists(local_ffmpeg):
-            return os.path.abspath(local_ffmpeg)
+        import sys
+        if sys.platform.startswith("win"):
+            local_ffmpeg = os.path.join("bin", "ffmpeg.exe")
+            if os.path.exists(local_ffmpeg):
+                return os.path.abspath(local_ffmpeg)
         return "ffmpeg" # Assume it is on system PATH
 
     def generate_ass_subtitles(self, script, ass_path: str):
