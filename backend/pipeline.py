@@ -92,6 +92,13 @@ class Pipeline:
         print("TUBEFLOW: STARTING CONTENT PIPELINE RUN")
         print("="*50)
 
+        # Check YouTube authorization if running from queue (automated mode)
+        publisher = YouTubePublisher()
+        if manual_topic is None and not publisher.is_authorized():
+            msg = "YouTube channel is NOT authorized. Please run the local dashboard to log in and update GitHub secrets."
+            print(msg)
+            return {"success": False, "error": msg}
+
         # 1. Resolve Topic
         topic = manual_topic or self.get_next_topic()
         if not topic:
