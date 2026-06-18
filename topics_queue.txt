@@ -1,7 +1,6 @@
 # Add your video topics here, one per line.
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
-The Day a Swedish Viggen Locked on an SR-71
 How Stealth Fighter Jets Evade Heat-Seeking Missiles
 The Brutal Training of Top Gun Pilots
 Why the B-52 Stratofortress Will Fly for 100 Years
