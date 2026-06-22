@@ -11,7 +11,7 @@ class ScriptScene(BaseModel):
     scene_number: int = Field(description="The sequential number of the scene starting from 1")
     narration: str = Field(description="The exact English voiceover text to be spoken in this scene. Must be high energy, engaging, and under 10-15 words.")
     duration: float = Field(description="Estimated duration in seconds for this narration. MUST be strictly between 4.0 and 6.0 seconds.")
-    search_query: str = Field(description="A specific, 2-3 word English search query to find relevant stock videos on Pexels (e.g., 'fighter jet flight', 'aircraft carrier launch', 'military pilot cockpit').")
+    search_query: str = Field(description="An ultra-specific military search query of 3-5 words for Pexels. MUST be highly specific to military aviation and tactics. Avoid generic terms (e.g. if the scene is about carrier takeoff, use 'aircraft carrier flight deck, fighter jet taking off, steam catapult launch, military aviation' instead of just 'steam' or 'takeoff').")
 
 class VideoScript(BaseModel):
     title: str = Field(description="An extremely engaging, click-worthy YouTube Shorts title in English. (Keep under 100 chars, use emojis).")
@@ -67,7 +67,7 @@ Key constraints for massive virality and monetization viability:
 5. The Payoff: Deliver fully on the promise of the title by the end of the video. The open loop MUST be resolved, and the promise of the title must be completed truthfully without lying to the viewer.
 6. Seamless Loop: The final sentence must end mid-thought or connect grammatically and thematically back to the very first sentence of the script, creating a seamless loop.
 7. Scribe in standard English.
-8. For each scene, specify a concrete search query for stock footage. It must be highly relevant and descriptive, optimized for Pexels search.
+8. For each scene, specify an ultra-specific search query for stock footage. The query must be highly specific to the military/tactical niche, explicitly incorporating terms like 'military', 'navy', 'air force', 'fighter jet', or 'warfare' when relevant, and avoiding any generic words. For example, if a scene discusses a steam catapult, the query must be 'aircraft carrier flight deck, fighter jet taking off, steam catapult launch, military aviation' rather than just 'steam'.
 """
 
         print(f"Generating script for topic: '{topic}' using Gemini...")

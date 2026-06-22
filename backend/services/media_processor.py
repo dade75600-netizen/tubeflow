@@ -62,11 +62,24 @@ class MediaProcessor:
             except Exception as h_err:
                 print(f"Error reading video history: {h_err}")
         
+        # Force context: Ensure query has military tags
+        military_keywords = ['military', 'navy', 'air force', 'fighter jet', 'warfare', 'soldier', 'combat', 'stealth', 'aircraft carrier']
+        has_military_context = any(k in query.lower() for k in military_keywords)
+        
+        # Clean query (strip and replace commas to avoid Pexels API issues)
+        clean_query = query.replace(',', ' ').replace('.', ' ').strip()
+        if not has_military_context:
+            clean_query = f"{clean_query} military fighter jet"
+            
+        # Blacklist: Exclude commercial and non-military terms using negative search operators
+        blacklist_operators = ' -commercial -passenger -airliner -airport_terminal -vintage -antique'
+        processed_query = f"{clean_query}{blacklist_operators}"
+        
         # We search specifically for portrait (vertical) videos, increase per_page to give more randomized options
-        url = f"https://api.pexels.com/videos/search?query={requests.utils.quote(query)}&per_page=15&orientation=portrait"
+        url = f"https://api.pexels.com/videos/search?query={requests.utils.quote(processed_query)}&per_page=15&orientation=portrait"
         
         try:
-            print(f"Searching Pexels for '{query}' (vertical)...")
+            print(f"Searching Pexels for '{processed_query}' (vertical)...")
             response = requests.get(url, headers=headers, timeout=15)
             response.raise_for_status()
             data = response.json()
@@ -76,8 +89,9 @@ class MediaProcessor:
                 # Randomized fallbacks to prevent asset duplication across different videos
                 fallbacks = ["military jet", "fighter jet", "stealth aircraft", "aircraft carrier launch", "military aircraft cockpit"]
                 chosen_fallback = random.choice(fallbacks)
-                print(f"No videos found on Pexels for: '{query}'. Trying fallback '{chosen_fallback}'...")
-                fallback_url = f"https://api.pexels.com/videos/search?query={requests.utils.quote(chosen_fallback)}&per_page=10&orientation=portrait"
+                processed_fallback = f"{chosen_fallback}{blacklist_operators}"
+                print(f"No videos found on Pexels for: '{processed_query}'. Trying fallback '{processed_fallback}'...")
+                fallback_url = f"https://api.pexels.com/videos/search?query={requests.utils.quote(processed_fallback)}&per_page=10&orientation=portrait"
                 response = requests.get(fallback_url, headers=headers, timeout=15)
                 data = response.json()
                 videos = data.get("videos", [])
