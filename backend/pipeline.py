@@ -82,7 +82,7 @@ class Pipeline:
         with open(history_file, 'a', encoding='utf-8') as f:
             f.write(f"[{timestamp}] {topic}\n")
 
-    def run(self, manual_topic: str = None) -> dict:
+    def run(self, manual_topic: str = None, upload: bool = True) -> dict:
         """
         Runs the complete automated YouTube video production and publishing pipeline.
         Returns a status dictionary with results.
@@ -94,7 +94,7 @@ class Pipeline:
 
         # Check YouTube authorization if running from queue (automated mode)
         publisher = YouTubePublisher()
-        if manual_topic is None and not publisher.is_authorized():
+        if upload and manual_topic is None and not publisher.is_authorized():
             msg = "YouTube channel is NOT authorized. Please run the local dashboard to log in and update GitHub secrets."
             print(msg)
             return {"success": False, "error": msg}
@@ -241,7 +241,7 @@ class Pipeline:
             video_id = None
             uploaded = False
             
-            if publisher.is_authorized():
+            if upload and publisher.is_authorized():
                 print("YouTube channel authorized. Starting upload...")
                 
                 # Format description with affiliate links at the very top (first 3 lines)
@@ -287,7 +287,7 @@ class Pipeline:
                 print("YouTube channel is NOT authorized. Video saved locally in outputs/ folder. Upload skipped.")
 
             # Step 6.1: Publish to TikTok
-            if self.config.get("tiktok", {}).get("enabled", True):
+            if upload and self.config.get("tiktok", {}).get("enabled", True):
                 print("TikTok publishing is enabled.")
                 tiktok_publisher.upload_video(
                     file_path=final_video_path,
