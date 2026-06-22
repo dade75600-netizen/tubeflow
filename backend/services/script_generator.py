@@ -9,8 +9,8 @@ from typing import List
 # Define structured output models for Gemini
 class ScriptScene(BaseModel):
     scene_number: int = Field(description="The sequential number of the scene starting from 1")
-    narration: str = Field(description="The exact English voiceover text to be spoken in this scene. Must be high energy and engaging.")
-    duration: float = Field(description="Estimated duration in seconds for this narration. Rule of thumb: words count divided by 2.5.")
+    narration: str = Field(description="The exact English voiceover text to be spoken in this scene. Must be high energy, engaging, and under 10-15 words.")
+    duration: float = Field(description="Estimated duration in seconds for this narration. MUST be strictly between 4.0 and 6.0 seconds.")
     search_query: str = Field(description="A specific, 2-3 word English search query to find relevant stock videos on Pexels (e.g., 'fighter jet flight', 'aircraft carrier launch', 'military pilot cockpit').")
 
 class VideoScript(BaseModel):
@@ -55,18 +55,19 @@ class ScriptGenerator:
         # Build prompt instructing Gemini to write a high-retention vertical script
         prompt = f"""
 You are the lead scriptwriter for the YouTube Shorts channel '{channel_cfg.get('name', 'MilitaryDeepOps')}', specializing in '{niche}'.
-Write a highly engaging, high-retention video script about the topic: "{topic}".
+Write a highly engaging, high-retention video script about the topic/title: "{topic}".
 
 Your writing style must be: {tone}.
 
 Key constraints for massive virality and monetization viability:
 1. The total duration of all scenes combined MUST NOT exceed {max_duration} seconds (keep it between 35 and 45 seconds total).
-2. Start with a massive psychological hook in the first 3 seconds to stop the scroll (e.g., start with shocking questions, classified/unknown secrets, or high-stakes statements like 'This is the terrifying reason...', 'What the military hid about...', or 'Most pilots don't survive this...').
-3. Keep the narration fast-paced, dramatic, and punchy. Use short, high-impact sentences.
-4. Bait viewer interaction: Include a subtle debate, mystery, or direct question near the middle or end to drive massive comment section discussion (e.g., 'Would you fly this?', 'Was it a design flaw or sabotage? Comment below').
-5. Seamless loop: The final sentence (outro) must end mid-thought or connect grammatically/thematically back to the first sentence of the script, creating a seamless loop that tricks viewers into watching the video 2-3 times.
-6. Scribe in standard English.
-7. For each scene, specify a concrete search query for stock footage. It must be highly relevant and descriptive, optimized for Pexels search.
+2. The Hook (0:00 - 0:15): Start IMMEDIATELY by confirming the promise of the title in the very first sentence. NO intros, NO generic greetings like "Hey everyone". If the title talks about a specific secret, stat, or feature, the first sentence MUST state/address that immediately (e.g. if the title is "F-16 Viper: The ULTIMATE Budget Fighter Jet!", the first sentence must be: "This is the exact reason why the F-16 Viper rules the skies, despite costing a fraction of its competitors...").
+3. The Pacing: Use short, punchy, high-impact sentences. Delete every single superfluous word. Each scene MUST have a duration of 4 to 6 seconds to keep the visual rhythm extremely fast.
+4. The Open Loop: Around the middle of the script (around 20 seconds, usually in scene 3 or 4), insert an open loop—a mystery or a question that will be answered only at the end (e.g., "But there is a critical flaw that pilots fear most, and I'll show it to you in a moment.").
+5. The Payoff: Deliver fully on the promise of the title by the end of the video. The open loop MUST be resolved, and the promise of the title must be completed truthfully without lying to the viewer.
+6. Seamless Loop: The final sentence must end mid-thought or connect grammatically and thematically back to the very first sentence of the script, creating a seamless loop.
+7. Scribe in standard English.
+8. For each scene, specify a concrete search query for stock footage. It must be highly relevant and descriptive, optimized for Pexels search.
 """
 
         print(f"Generating script for topic: '{topic}' using Gemini...")
