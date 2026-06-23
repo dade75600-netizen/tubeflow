@@ -2,7 +2,6 @@
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
 
-Eurofighter Typhoon: The UNBEATABLE Maneuver Beast! 🤯✈️ (The Physics of Thrust Vectoring Revealed!)
 HYPERSONIC MISSILE vs. AIRCRAFT CARRIER! 😱 Can the Phalanx CIWS Shred It in Time?
 YF-23 Black Widow: The Tragic Stealth Jet EXPOSED! 🤯 Was it better than the F-22? ✈️
 C-5 Galaxy: The INSANE Flying Giant! 🤯✈️ (How it Swallows Entire Helicopters!)
