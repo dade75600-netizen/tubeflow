@@ -2,7 +2,6 @@
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
 
-Close-Air Support: The UNBELIEVABLE Flying Shield! 🤯✈️ (How Pilots Save Lives from Above!)
 Vietnam Dogfights: The UNBELIEVABLE Sky Battles! 💥 (How F-4 Phantoms Beat the MiG-21!)
 Eurofighter Typhoon: The UNBEATABLE Maneuver Beast! 🤯✈️ (The Physics of Thrust Vectoring Revealed!)
 HYPERSONIC MISSILE vs. AIRCRAFT CARRIER! 😱 Can the Phalanx CIWS Shred It in Time?
