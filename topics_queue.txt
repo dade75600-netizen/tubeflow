@@ -2,7 +2,6 @@
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
 
-C-5 Galaxy: The INSANE Flying Giant! 🤯✈️ (How it Swallows Entire Helicopters!)
 G-LOC TERROR! 😱 What Happens When a Fighter Pilot Passes Out at 9G?
 Harrier Jump Jet: The IMPOSSIBLE Vertical Fighter! 🤯✈️ (The Secret of Hovering Flight Revealed!)
 Radar Invisible: The INSANE Science of Stealth Paint! 🤯✈️
