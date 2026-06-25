@@ -2,7 +2,6 @@
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
 
-F-16 Viper: The ULTIMATE Budget Fighter Jet! 🦅 (Why it Rules the World's Skies!)
 Su-35 Flanker-E: Russia's Most Dangerous Jet EXPOSED! 🤯 Is it truly unstoppable? ✈️
 A-10 Warthog: The UNKILLABLE Flying Tank! 🐗 (Why the Brrrt Refuses to Die!)
 The End of Pilots? Military Drones EXPOSED! 🤯 Will AI replace human fighter pilots? ✈️
