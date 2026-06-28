@@ -318,7 +318,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 f"[{voice_idx}:a]adelay={int(hook_duration * 1000)}|"
                 f"{int(hook_duration * 1000)}[voice_delayed]"
             )
-            audio_inputs = ["[swoosh_trim]", "[voice_delayed]"]
+            audio_inputs = ["[voice_delayed]", "[swoosh_trim]"]
         else:
             audio_inputs = [f"[{voice_idx}:a]"]
 
@@ -353,7 +353,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             output_path
         ])
 
-        print(f"Compiling video to {output_path}...")
+        print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {n_audio})...")
         try:
             result = subprocess.run(
                 cmd,

@@ -25,6 +25,8 @@ from backend.services.media_processor import MediaProcessor
 from backend.services.video_editor import VideoEditor
 from backend.services.first_frame_engineer import FirstFrameEngineer
 from backend.services.notifier import Notifier
+from backend.services.analytics_engine import AnalyticsEngine
+from backend.services.improvement_agent import ImprovementAgent
 from backend.channel_config import CHANNEL_CONFIGS
 
 # Load environment variables from .env
@@ -370,3 +372,64 @@ class Pipeline:
                 "topic": topic,
                 "error": str(e)
             }
+
+    def run_analysis(self) -> dict:
+        """
+        Runs the performance analysis and feedback loop.
+        Fetches metrics using AnalyticsEngine and optimizes queue with ImprovementAgent.
+        """
+        print("\n" + "="*50)
+        print(f"TUBEFLOW: RUNNING PERFORMANCE ANALYSIS FOR {self.profile.get('channel_handle')}")
+        print("="*50)
+        
+        try:
+            analytics = AnalyticsEngine()
+            print("Fetching recent video metrics from YouTube...")
+            dataset = analytics.fetch_recent_metrics(max_results=20)
+            
+            if not dataset:
+                print("No data available for analysis.")
+                return {"success": False, "error": "No dataset"}
+                
+            agent = ImprovementAgent(config_path=self.config_path)
+            report = agent.analyze_and_improve(
+                dataset=dataset,
+                queue_file=self.queue_file,
+                profile=self.profile
+            )
+            
+            return {
+                "success": True,
+                "report": report.model_dump() if report else None,
+                "dataset_size": len(dataset)
+            }
+        except Exception as e:
+            print(f"Analysis failed: {e}")
+            return {"success": False, "error": str(e)}
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="TubeFlow Content Pipeline")
+    parser.add_argument("--analyze", action="store_true", help="Run the performance analysis and feedback loop")
+    parser.add_argument("--channel", type=str, help="Force channel profile (military/aviation)")
+    parser.add_argument("--force-publish", action="store_true", help="Force publish ignoring config")
+    
+    args = parser.parse_args()
+    
+    p = Pipeline()
+    if args.channel:
+        from backend.channel_config import CHANNEL_CONFIGS
+        if args.channel.lower() in ["aviation", "civil", "lords"]:
+            p.profile = CHANNEL_CONFIGS["aviation"]
+            p.queue_file = "topics_queue_aviation.txt"
+        else:
+            p.profile = CHANNEL_CONFIGS["military"]
+            p.queue_file = "topics_queue_military.txt"
+            
+    if args.analyze:
+        res = p.run_analysis()
+        sys.exit(0 if res.get("success") else 1)
+    else:
+        res = p.run(upload=args.force_publish)
+        sys.exit(0 if res.get("success") else 1)
+
