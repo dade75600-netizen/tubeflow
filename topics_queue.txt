@@ -1,34 +1,100 @@
-# Add your video topics here, one per line.
-# Lines starting with '#' or empty lines will be ignored.
-# The system will process them from top to bottom, removing them or marking them as done.
-
-The Soviet Submarine That Almost Started World War III (October 1962)
-How 1 American Pilot Accidentally Ended a 30-Year War
-The Weapon So Deadly NATO Classified It for 40 Years
-Why Russia's Most Advanced Tank Keeps Getting Destroyed by $500 Drones
-The Special Forces Mission That Never Officially Happened
-The Stealth Bomber That Was Hidden in Plain Sight for 9 Years
-How 3 Soviet Soldiers Prevented a Nuclear Disaster at Chernobyl
-The CIA Spy Plane That Flew at Mach 3.2 Over Soviet Air Defense
-The Navy SEAL Operation That Rescued 2 Hostages in 15 Minutes
-Why Germany's Most Advanced U-Boat Sunk on its 1st Patrol
-The Hidden Air Base That Stored 150 Secret Nuclear Bombs
-How a $200 Toy Drone Defeated a $2 Million Patriot Missile
-The British Sniper Who Eliminated 5 Targets From 1.5 Miles Away
-The Secret US Helicopter That Crashed During the Bin Laden Raid
-How 2 Fighter Jets Intercepted a Hijacked Airliner in 4 Minutes
-The Soviet Doomsday Machine That Can Still Launch 30 Missiles
-The French Foreign Legion Stand That Stopped 2,000 Enemy Troops
-Why a Single F-15 Fighter Jet Landed Safely With Only 1 Wing
-The Secret Tunnel Under Berlin That Spied on 1,000 Soviet Messages
-How 1 KGB Agent Tricked the CIA for 10 Years (And Nobody Knew)
-The Stealth Fighter That Was Shot Down by a 1960s Missile
-The Special Forces Raid That Freed 500 Prisoners in 20 Minutes
-How 4 Nuclear Submarines Silently Collided Under the Atlantic
-The Sound Weapon That Made 100 Soldiers Instantly Retreat
-Why a Single $500M Destroyer Was Disabled by a Single $10 Bolt
-The Cold War Spy Who Photographed 1,000 Secret Soviet Blueprints
-How 1 Navy Pilot Survived 6 Days Behind Enemy Lines in Bosnia
-The Nuclear Bomber That Dropped a Live Bomb on South Carolina
-Why the US Air Force Spent $10 Billion on a Jet That Never Flew
-The Secret Satellite That Exposed 400 Underground Soviet Silos
+Why Pilots Never Drink the Water on Planes
+The Secret Bedroom Hidden Inside Boeing 777
+Why Airbus Windows Have a Tiny Hole in Them
+The Terrifying Reason Plane Engines Shoot Fire
+Why Flight Attendants Keep One Hand Behind Their Back
+The Genius Design That Keeps Planes From Colliding
+Why Planes Avoid Flying Over the Pacific Ocean
+The Banned Flight Path Pilots Secretly Fear
+Why Airplane Tires Never Blow Up on Landing
+The Real Reason Pilots Eat Different Meals
+The Most Dangerous Runway in the World
+Why Planes Fly at 35000 Feet
+The Terrifying Truth About In-Flight Turbulence
+What Happens When Both Engines Fail at Once
+Why Boeing 747 Has a Giant Hump
+The Secret Code Flight Attendants Use For Bad Passengers
+Why Airline Food Tastes So Different
+The Genius Trick to Survive a Plane Crash
+Why Planes Are Painted White
+The Real Reason Plane Windows Are Round
+Why Airlines Don't Want You to Know About Deadheading
+The Terrifying Flight That Ran Out of Fuel
+What Happens to Waste When You Flush the Toilet
+Why Planes Never Fly Directly Over the Himalayas
+The Secret Key That Unlocks Flight Deck Doors
+Why Boeing and Airbus Cockpits Look Completely Different
+The Real Reason Planes Have Red and Green Lights
+Why You Should Never Use the Seat Pocket
+What Pilots Do When an Engine Explodes Mid-Air
+The Genius Physics of Airbus Wingtips
+Why the Concorde Sunk the Future of Aviation
+The Terrifying Reason Behind the Bermuda Triangle
+Why Planes Drop Oxygen Masks Even in Minor Cabin Leaks
+The Secret Cargo Hidden Under Passenger Seats
+Why Airlines Sell More Tickets Than Seats
+The Danger of Flying Through Volcanic Ash
+Why Boeing 737 Engines Have Flat Bottoms
+The Genius Design of Engine Fan Blades
+Why Flight Crews Hate the Night Shift
+The Secret Protocol for Passengers Who Die in Flight
+Why Planes Use Autoland in Heavy Fog
+The Real Reason Cabin Lights Are Dimmed for Takeoff
+What Happens if a Door Opens Mid-Flight
+Why Airbus Planes Speak to the Pilots
+The Terrifying Mystery of Flight MH370
+Why Pilots Are Banned From Having Beards
+The Banned Airline Secrets They Keep From You
+Why Planes Dump Fuel Before Emergency Landings
+The Genius Engineering of Jet Engines
+Why Boeing Planes Have a Yoke Instead of a Sidestick
+The Secret Room Where Pilots Rest on Long Flights
+Why Helicopters Are Harder to Fly Than Planes
+The Terrifying Danger of Bird Strikes
+Why Planes Can Fly With Only One Engine
+The Real Reason Flight Attendants Check Your Seatbelt
+What Happens to Planes Stored in the Desert
+Why Airlines Banned the Boeing 737 MAX
+The Genius Reason Winglets Save Millions of Dollars
+Why Flight Crews Are Trained to Fight Fires
+The Secret Warning Signs of Cabin Depressurization
+Why Planes Must Land Head-Into the Wind
+The Real Reason Airplane Restrooms Lock From the Outside
+What Happens When Lightning Strikes a Plane
+Why Pilots Wear Gold Stripes on Their Uniforms
+The Terrifying Flight That Landed With No Roof
+Why Airbus A380 Was a Financial Failure
+The Secret Code Words Pilots Use in Emergencies
+Why Planes Cannot Fly in Extreme Heat
+The Real Reason Airlines Lose Your Luggage
+What Happens When a Plane Enters a Spin
+Why Boeing 787 Wings Bend So Much
+The Genius Innovation of Airbus Double-Decker
+Why Flight Crews Are Constantly Checking the Galley
+The Secret Life of Air Traffic Controllers
+Why Planes Cannot Reverse on the Ground
+The Real Reason Runway Numbers Change
+What Happens to Water in the Fuel Tanks
+Why Pilots Love Flying the Boeing 777
+The Terrifying Flight That Swallowed a Passenger
+Why Airbus Controls Are Like a Joystick
+The Secret Vaults Underneath Large Airports
+Why Planes Make a Loud Clunk After Takeoff
+The Real Reason Flight Crews Count Passengers
+What Happens if the Co-Pilot Passes Out
+Why Boeing 747 is Called the Queen of the Skies
+The Genius Way Planes Defrost Wings in Flight
+Why Cabin Air is Actually Safe to Breathe
+The Secret Training of Elite Airline Pilots
+Why Planes Fly Slower Now Than in 1970
+The Real Reason Pilot Communication is Hard to Hear
+What Happens When an Engine Ingests a Drone
+Why Airbus A350 Has a Carbon Fiber Body
+The Terrifying Crosswind Landings at Madeira Airport
+Why Airlines Charge Extra for Emergency Exit Seats
+The Secret Reason Cabin Windows Have Blinds
+Why Planes Hover in Holding Patterns for Hours
+The Real Reason Flight Attendants Look at Your Hands
+What Happens to Leftover Jet Fuel
+Why Boeing 777X Has Folding Wingtips
+The Genius Safety Features of Modern Airports
