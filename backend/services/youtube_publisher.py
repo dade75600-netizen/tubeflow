@@ -128,8 +128,13 @@ class YouTubePublisher:
             chunksize=1024 * 1024  # 1MB chunks
         )
 
+        # Ensure 'id' is included in the part parameter to guarantee the video ID is returned in the response
+        parts = list(body.keys())
+        if 'id' not in parts:
+            parts.append('id')
+
         request = youtube.videos().insert(
-            part=','.join(body.keys()),
+            part=','.join(parts),
             body=body,
             media_body=media
         )

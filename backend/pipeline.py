@@ -276,7 +276,7 @@ class Pipeline:
                     tags=tags,
                     privacy_status=privacy
                 )
-                uploaded = True
+                uploaded = bool(video_id)
                 print(f"Video uploaded to YouTube. Video ID: {video_id}")
                 
                 # Post affiliate links as the first comment
