@@ -39,7 +39,33 @@ class MediaProcessor:
         await communicate.save(output_path)
         print(f"Voiceover saved to {output_path}")
 
-    def fetch_stock_video(self, query: str, output_path: str, duration_needed: float) -> bool:
+    def _detect_military_pool(self, text: str) -> list:
+        """
+        Returns military search keywords matching target sub-niche (cold war, special ops, modern).
+        """
+        text_lower = text.lower()
+        cold_war_keywords = [
+            "cold war", "soviet", "nuclear", "missile", "silo", "bunker", "submarine", 
+            "periscope", "radar", "doomsday", "spy", "kgb", "cia", "berlin", "cuba", 
+            "1962", "1950", "1960", "1970", "1980"
+        ]
+        special_ops_keywords = [
+            "special forces", "seal", "sas", "night vision", "parachute", "sniper", 
+            "hostage", "raid", "training", "mission", "green beret", "commando", "ranger"
+        ]
+        
+        is_cold_war = any(k in text_lower for k in cold_war_keywords)
+        is_special_ops = any(k in text_lower for k in special_ops_keywords)
+        
+        if is_cold_war:
+            return ["nuclear missile silo", "cold war bunker", "submarine periscope", "military radar station"]
+        elif is_special_ops:
+            return ["soldier night vision", "special forces training", "military parachute jump", "sniper position"]
+        else:
+            # Modern warfare (default)
+            return ["military drone strike", "special forces night operation", "tank battlefield smoke", "military helicopter combat"]
+
+    def fetch_stock_video(self, query: str, output_path: str, duration_needed: float, profile: dict = None, title: str = None) -> bool:
         """
         Queries Pexels for a vertical video clip matching the query and downloads it.
         Ensures that the same video clip is never reused across different video pipeline runs.
@@ -62,17 +88,32 @@ class MediaProcessor:
             except Exception as h_err:
                 print(f"Error reading video history: {h_err}")
         
-        # Force context: Ensure query has military tags
-        military_keywords = ['military', 'navy', 'air force', 'fighter jet', 'warfare', 'soldier', 'combat', 'stealth', 'aircraft carrier']
-        has_military_context = any(k in query.lower() for k in military_keywords)
-        
+        # Determine military profile context and blacklists
+        is_military = False
+        if profile and profile.get("bg_pool") == "military_combat":
+            is_military = True
+        elif not profile:
+            channel_cfg = self.config.get("channel", {})
+            niche = str(channel_cfg.get("niche", "")).lower()
+            if "military" in niche or "combat" in niche or "stealth" in niche:
+                is_military = True
+
+        # Blacklist logic
+        if is_military:
+            blacklist_operators = ' -civilian -commercial -protest -vintage -antique -parade'
+        else:
+            blacklist_operators = ' -commercial -passenger -airliner -airport_terminal -vintage -antique'
+
         # Clean query (strip and replace commas to avoid Pexels API issues)
         clean_query = query.replace(',', ' ').replace('.', ' ').strip()
-        if not has_military_context:
-            clean_query = f"{clean_query} military fighter jet"
-            
-        # Blacklist: Exclude commercial and non-military terms using negative search operators
-        blacklist_operators = ' -commercial -passenger -airliner -airport_terminal -vintage -antique'
+        
+        # Force context if missing and generic
+        if is_military:
+            military_keywords = ['military', 'navy', 'air force', 'fighter jet', 'warfare', 'soldier', 'combat', 'stealth', 'aircraft carrier']
+            has_military_context = any(k in query.lower() for k in military_keywords)
+            if not has_military_context:
+                clean_query = f"{clean_query} military fighter jet"
+        
         processed_query = f"{clean_query}{blacklist_operators}"
         
         # We search specifically for portrait (vertical) videos, increase per_page to give more randomized options
@@ -86,8 +127,14 @@ class MediaProcessor:
             
             videos = data.get("videos", [])
             if not videos:
-                # Randomized fallbacks to prevent asset duplication across different videos
-                fallbacks = ["military jet", "fighter jet", "stealth aircraft", "aircraft carrier launch", "military aircraft cockpit"]
+                # Sourcing pool fallback
+                if is_military:
+                    # Detect correct pool based on title keyword, else query keyword
+                    check_text = title if title else query
+                    fallbacks = self._detect_military_pool(check_text)
+                else:
+                    fallbacks = ["military jet", "fighter jet", "stealth aircraft", "aircraft carrier launch", "military aircraft cockpit"]
+                
                 chosen_fallback = random.choice(fallbacks)
                 processed_fallback = f"{chosen_fallback}{blacklist_operators}"
                 print(f"No videos found on Pexels for: '{processed_query}'. Trying fallback '{processed_fallback}'...")

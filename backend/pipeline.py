@@ -25,6 +25,7 @@ from backend.services.media_processor import MediaProcessor
 from backend.services.video_editor import VideoEditor
 from backend.services.thumbnail_creator import ThumbnailCreator
 from backend.services.notifier import Notifier
+from backend.channel_config import CHANNEL_CONFIGS
 
 # Load environment variables from .env
 load_dotenv()
@@ -34,6 +35,14 @@ class Pipeline:
         self.config_path = config_path
         self.config = self.load_config()
         self.queue_file = "topics_queue.txt"
+        
+        # Resolve active channel profile from configuration channel name
+        channel_name = self.config.get("channel", {}).get("name", "").lower()
+        if "aviation" in channel_name or "civil" in channel_name or "lords" in channel_name:
+            self.profile = CHANNEL_CONFIGS["aviation"]
+        else:
+            self.profile = CHANNEL_CONFIGS["military"]
+        print(f"[Pipeline] Resolved active channel profile: {self.profile.get('channel_handle')}")
 
     def load_config(self) -> dict:
         """Loads configuration from yaml."""
@@ -134,7 +143,7 @@ class Pipeline:
             
             for attempt in range(1, max_retries + 1):
                 try:
-                    script = script_gen.generate_script(topic)
+                    script = script_gen.generate_script(topic, profile=self.profile)
                     break
                 except Exception as e:
                     print(f"Attempt {attempt} to generate script failed: {e}")
@@ -158,13 +167,13 @@ class Pipeline:
                 clip_path = os.path.join(temp_dir, clip_filename)
                 
                 # Sourcing video matching the search query
-                success = media_proc.fetch_stock_video(scene.search_query, clip_path, scene.duration)
+                success = media_proc.fetch_stock_video(scene.search_query, clip_path, scene.duration, profile=self.profile, title=topic)
                 
                 # If search fails, retry with a broader query or fallback
                 if not success:
                     fallback_query = "military aviation"
                     print(f"Retrying scene {scene.scene_number} with fallback: '{fallback_query}'")
-                    success = media_proc.fetch_stock_video(fallback_query, clip_path, scene.duration)
+                    success = media_proc.fetch_stock_video(fallback_query, clip_path, scene.duration, profile=self.profile, title=topic)
                 
                 if success and os.path.exists(clip_path):
                     clips_paths.append(clip_path)
@@ -232,7 +241,7 @@ class Pipeline:
 
             # Step 5: Create Thumbnail
             # Use script title or topic keywords for thumbnail
-            thumbnail_success = thumb_creator.create_thumbnail(topic, final_thumbnail_path)
+            thumbnail_success = thumb_creator.create_thumbnail(topic, final_thumbnail_path, profile=self.profile)
             if not thumbnail_success or not os.path.exists(final_thumbnail_path):
                 print("Warning: Thumbnail generation failed. Proceeding without custom thumbnail.")
                 final_thumbnail_path = None

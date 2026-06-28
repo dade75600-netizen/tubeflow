@@ -15,3 +15,5 @@ assets/music\alex_skrindo__miza_-_thinkin_ncs_release_radio_edit.mp3
 assets/music\acejax_feat_danilyon_-_by_my_side.mp3
 assets/music\cinematic_drums.mp3
 assets/music\andromedik_-_with_me.mp3
+assets/music\jamendo-472797.mp3
+assets/music\alexander_clark_-_cadmium_-_be_with_you_feat_grant_dawson.mp3

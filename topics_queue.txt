@@ -2,125 +2,33 @@
 # Lines starting with '#' or empty lines will be ignored.
 # The system will process them from top to bottom, removing them or marking them as done.
 
-Carrier Catapult INSANITY! 🤯🚀 How They Launch 70,000 Lbs in 2 Seconds!
-ENGINE FAILURE! 😱 Can a Fighter Jet Glide to Safety After a Flameout?
-Close-Air Support: The UNBELIEVABLE Flying Shield! 🤯✈️ (How Pilots Save Lives from Above!)
-Vietnam Dogfights: The UNBELIEVABLE Sky Battles! 💥 (How F-4 Phantoms Beat the MiG-21!)
-Eurofighter Typhoon: The UNBEATABLE Maneuver Beast! 🤯✈️ (The Physics of Thrust Vectoring Revealed!)
-HYPERSONIC MISSILE vs. AIRCRAFT CARRIER! 😱 Can the Phalanx CIWS Shred It in Time?
-YF-23 Black Widow: The Tragic Stealth Jet EXPOSED! 🤯 Was it better than the F-22? ✈️
-C-5 Galaxy: The INSANE Flying Giant! 🤯✈️ (How it Swallows Entire Helicopters!)
-G-LOC TERROR! 😱 What Happens When a Fighter Pilot Passes Out at 9G?
-Harrier Jump Jet: The IMPOSSIBLE Vertical Fighter! 🤯✈️ (The Secret of Hovering Flight Revealed!)
-Radar Invisible: The INSANE Science of Stealth Paint! 🤯✈️
-F-16 Viper: The ULTIMATE Budget Fighter Jet! 🦅 (Why it Rules the World's Skies!)
-Su-35 Flanker-E: Russia's Most Dangerous Jet EXPOSED! 🤯 Is it truly unstoppable? ✈️
-A-10 Warthog: The UNKILLABLE Flying Tank! 🐗 (Why the Brrrt Refuses to Die!)
-The End of Pilots? Military Drones EXPOSED! 🤯 Will AI replace human fighter pilots? ✈️
-Spying from Edge of Space: U-2 Dragon Lady's INSANE Cold War Secret! 🤯✈️
-Operation Desert Storm: The Night Stealth Jets SHATTERED Baghdad's Defenses! 🤯✈️
-MiG-31 Foxhound: The UNBELIEVABLE Near-Space Interceptor! 🇷🇺 (Can it Shoot Down Satellites?)
-French Rafale: The ULTIMATE Triple-Threat Jet! 🇫🇷 (Why it Outperforms the Competition!)
-Kamikaze Terror: The Dark History of Suicide Submarines & Planes! 😱💥
-Sonic Boom! 😱 What Happens INSIDE a Fighter Jet at Mach 2?
-Mid-Air Refueling: The IMPOSSIBLE Connection! ⛽ (Soda Can Target REVEALED!)
-XB-70 Valkyrie: The BEAUTIFUL Failure! 💔 (Its Tragic End REVEALED!)
-Anti-Radiation Missiles: Radar's SHOCKING Secret Killer! 🤯✈️
-Saab Gripen: The ULTIMATE Highway Fighter! 🇸🇪 (Road Landing Secret REVEALED!)
-Tu-160 Blackjack! 😱 The ABSOLUTE TERROR of This Bomber!
-Supersonic Ejection! 😱 What Happens When a Pilot Ejects at Mach 1+?
-Carrier Landing: The UNBREAKABLE Arresting Wire! ⚓ (50,000lb Jet Stop REVEALED!)
-Su-50 Berkut: The CRAZY Forward-Swept Wings! 🇷🇺 (Its Secret Advantage REVEALED!)
-F-86 vs MiG-15: The ULTIMATE Jet Dogfight! 🇰🇷 (Korean War Dominance REVEALED!)
-US Supercarriers: The NUCLEAR Powerhouse! 🇺🇸 (Its Endless Power REVEALED!)
-E-2 Hawkeye: The ULTIMATE Air War Commander! 📡 (Its Secret Power REVEALED!)
-SR-72 Son of Blackbird: The HYPERSONIC Spy Plane! 🚀 (Its Secret Missions REVEALED!)
-F-4 Phantom II: The Missing Gun EXPOSED! 🤯 Why was it added later? ✈️
-Air Defense: The DEADLIEST Systems! 🛡️ (Their Secret Kill Zones REVEALED!)
-CIWS: The UNSTOPPABLE Missile Shredder! 🎯 (Its Secret Rate of Fire REVEALED!)
-Pilot Down! 😱 What Happens in Escape & Evasion Training?
-Stealth Tech: Area 51's Secret Base EXPOSED! 🤯 Where was it born? ✈️
-B-21 Raider: The FUTURE of Global Strike! 🚀 (Its Stealth Secrets REVEALED!)
-Tu-95 Bear: Submarines Hear its SHOCKING Secret! 🤯✈️
-Russian Knights: The INSANE Aerobatics! 🇷🇺 (Their Secret G-Forces REVEALED!)
-Night Carrier Landing! 😱 What Happens on a Pitch Black Deck?
-First Jet Dogfight: The UNTOLD Story! 💥 (Korean War Secret REVEALED!)
-Mirage III: The ULTIMATE Desert King! 🏜️ (Its Secret Dominance REVEALED!)
-AESA Radar: The UNBEATABLE Target Tracker! 🛰️ (Its Secret Power REVEALED!)
-MiG-29 Defection: The BRAVE Pilot's Story! 🛩️ (His Secret Escape REVEALED!)
-P-51 Mustang: The LEGENDARY Escort! 🐎 (How it Saved Europe REVEALED!)
-Ka-52 Alligator: The DEADLY Attack Helicopter! 🚁 (Its Cockpit Secrets REVEALED!)
-F-111 Aardvark: The ULTIMATE Swing-Wing Bomber! ✈️ (Its Secret Mission REVEALED!)
-Thrust Vectoring: The INSANE Physics! 🚀 (Its Secret Maneuvers REVEALED!)
-Missile Lock! 😱 How Fighter Jets Evade DEADLY SAMs?
-Yalu River: Air War's SHOCKING Secret! 🤯✈️
-KC-135 Stratotanker: The UNSEEN Air Force Backbone! ⛽ (Its Secret Role REVEALED!)
-Nuclear Bomber! 😱 What's Inside the B-52's Payload Bay?
-Spitfire vs Bf 109: The UNBELIEVABLE Dogfight! 🇬🇧🇩🇪 (Their Secret Rivalry REVEALED!)
-F-22 Raptor: The INVISIBLE Air Dominator! 👻 (Its Secret Stealth REVEALED!)
-AV-8B Harrier II: Maintenance Nightmare EXPOSED! 🤯 Why is it so bad? ✈️
-Air-to-Air Missiles: The DEADLIEST Killers! 💥 (Their Secret Range REVEALED!)
-Water Crash! 😱 How Navy Pilots Survive This Training?
-F-15EX Eagle II: The ULTIMATE Missile Truck! 🚀 (Its Secret Payload REVEALED!)
-Yak-141 VTOL Jet: Soviet Failure EXPOSED! 🤯 Why did it fail? ✈️
-Low-Level Flight! 😱 What Happens in This DANGEROUS World?
-Bin Laden Raid: Stealth Chopper's SHOCKING Secret! 🤯✈️
-F/A-18 Super Hornet: The UNSTOPPABLE Workhorse! 🇺🇸 (Its Secret Versatility REVEALED!)
-Air Superiority: War's SHOCKING Secret Weapon! 🤯✈️
-F-117 Nighthawk: The FIRST Stealth Combat! 🤫 (Its Secret Mission REVEALED!)
-Drone Swarms: The REVOLUTIONARY Air War! 🤖 (Their Secret Impact REVEALED!)
-SR-71 Blackbird: The STEALTHY Skin! 🖤 (Its Secret Material REVEALED!)
-Su-27 Flanker: The REVOLUTIONARY Maneuverability! 🇷🇺 (Its Secret Cobra REVEALED!)
-C-17 Globemaster: The MASSIVE Combat Drop! 📦 (Its Secret Capacity REVEALED!)
-F-35B Lightning II: The VERTICAL Takeoff! 🚀 (Its Secret Fan REVEALED!)
-One-Winged F-15! 😱 What Happens After a Mid-Air Collision?
-F-22 vs F-35: Data Link Failure EXPOSED! 🤯 Why can't they share? ✈️
-A-6 Intruder: The LEGENDARY Night Bomber! 🌙 (Its Secret Accuracy REVEALED!)
-Carrier Deck: The CONTROLLED Chaos! ⚓ (Its Secret Signals REVEALED!)
-X-15 Rocket Plane: The INCREDIBLE Speed Demon! 🚀 (Its Secret Mach REVEALED!)
-MQ-9 Reaper: The SILENT Sky Predator! 💀 (Its Secret Kill Zone REVEALED!)
-B-1B Lancer: The TERRIFYING Low-Level Sweep! 💥 (Its Cockpit Secrets REVEALED!)
-Dangerous Airspace! 😱 Where is the Most Deadly Sky Today?
-Fighter Jet HUD: The UNBEATABLE Combat Aid! 🎯 (Its Secret Tech REVEALED!)
-Project Have Blue: Stealth's SHOCKING Secret History! 🤯✈️
-MiG-21 Fishbed: Most Produced Jet EXPOSED! 🤯 Why so many? ✈️
-Jet Engines: The INSANE Powerhouses! 🔥 (Their Secret Thrust REVEALED!)
-TACP: The UNSEEN Airstrike Directors! 💥 (Its Secret Coordination REVEALED!)
-V-22 Osprey: Its Controversial Design EXPOSED! 🤯 Is it safe? ✈️
-Mirage 2000: Modern Threat EXPOSED! 🤯 Why is it still relevant? ✈️
-AI Dogfight! 😱 What Happens When AI Fights Humans?
-F-35 Lightning II: The INVISIBLE Multi-Role Fighter! ⚡ (Its Secret Software REVEALED!)
-Stealth Bomber: Its SHOCKING Secret Mission! 🤯✈️
-Engine Failure! 😱 What Happens When a Jet Loses Power Mid-Flight?
-F-14 Tomcat: Top Gun's Controversial Legacy EXPOSED! 🤯 Was it too complex? ✈️
-B-52 Stratofortress: The 70-Year BOMBER! 🇺🇸 (Its Secret Modern Upgrades REVEALED!)
-Hypersonic Weapons: Their SHOCKING Secret Speed! 🤯✈️
-G-LOC! 😱 What Happens When a Pilot Blacks Out Mid-Dogfight?
-Rafale Fighter: French Power EXPOSED! 🤯 Can it beat the F-35? ✈️
-U-2 Dragon Lady: The IMPOSSIBLE Spy Plane! 🤫 (Its Secret Altitude REVEALED!)
-Pilot Training: The SHOCKING Secret Simulator! 🤯✈️
-Ejection Seat! 😱 What Happens During a High-Speed Bailout?
-Sukhoi Su-57 Felon: Its Stealth Claims EXPOSED! 🤯 Is it a true 5th Gen? ✈️
-AC-130 Gunship: The ANGEL of Death! 💀 (Its Secret Firepower REVEALED!)
-Black Hawk Down: The SHOCKING Secret Mission! 🤯🚁
-Mid-Air Collision! 😱 What Happens When Two Jets Crash?
-F-16 Fighting Falcon: Its "Cheap" Fighter Myth EXPOSED! 🤯 Is it true? ✈️
-B-2 Spirit: The GHOST Bomber! 👻 (Its Secret Stealth Coatings REVEALED!)
-Aerial Dogfight: The SHOCKING Secret Rules of Engagement! 🤯✈️
-Fuel Leak! 😱 What Happens When a Fighter Jet Runs Out of Gas?
-China's J-20 Stealth Fighter: Its Capabilities EXPOSED! 🤯 Is it a threat? ✈️
-A-10 Warthog: The TANK Killer! 🛡️ (Its Secret GAU-8 Cannon REVEALED!)
-Top Gun Pilots: Their SHOCKING Secret Training! 🤯✈️
-Carrier Fire! 😱 What Happens When a Jet Catches Fire on Deck?
-F-35 Program: Its Cost Overruns EXPOSED! 🤯 Was it worth it? ✈️
-SR-71 Blackbird: The UNMATCHED Spy Plane! 🚀 (Its Secret Speed REVEALED!)
-Maverick Missiles: Their SHOCKING Secret Guidance! 🤯💥
-SAM Attack! 😱 How Pilots Survive a Deadly Missile Barrage?
-Russia's Air Force: Its Modernization EXPOSED! 🤯 How good are they? ✈️
-AH-64 Apache: The ULTIMATE Attack Helicopter! ⚔️ (Its Secret Sensors REVEALED!)
-Pilot G-Suits: Their SHOCKING Secret Function! 🤯✈️
-Hypoxia! 😱 What Happens When Pilots Run Out of Oxygen?
-Eurofighter Typhoon: Its Export Success EXPOSED! 🤯 Why is it popular? ✈️
-C-130 Hercules: The UNSTOPPABLE Transport! 🌍 (Its Secret Adaptability REVEALED!)
-Fighter Jet Ejection: The SHOCKING Secret Sequence! 🤯✈️
-Bird Strike! 😱 What Happens When a Jet Hits a Flock of Birds?
+The Soviet Submarine That Almost Started World War III (October 1962)
+How 1 American Pilot Accidentally Ended a 30-Year War
+The Weapon So Deadly NATO Classified It for 40 Years
+Why Russia's Most Advanced Tank Keeps Getting Destroyed by $500 Drones
+The Special Forces Mission That Never Officially Happened
+The Stealth Bomber That Was Hidden in Plain Sight for 9 Years
+How 3 Soviet Soldiers Prevented a Nuclear Disaster at Chernobyl
+The CIA Spy Plane That Flew at Mach 3.2 Over Soviet Air Defense
+The Navy SEAL Operation That Rescued 2 Hostages in 15 Minutes
+Why Germany's Most Advanced U-Boat Sunk on its 1st Patrol
+The Hidden Air Base That Stored 150 Secret Nuclear Bombs
+How a $200 Toy Drone Defeated a $2 Million Patriot Missile
+The British Sniper Who Eliminated 5 Targets From 1.5 Miles Away
+The Secret US Helicopter That Crashed During the Bin Laden Raid
+How 2 Fighter Jets Intercepted a Hijacked Airliner in 4 Minutes
+The Soviet Doomsday Machine That Can Still Launch 30 Missiles
+The French Foreign Legion Stand That Stopped 2,000 Enemy Troops
+Why a Single F-15 Fighter Jet Landed Safely With Only 1 Wing
+The Secret Tunnel Under Berlin That Spied on 1,000 Soviet Messages
+How 1 KGB Agent Tricked the CIA for 10 Years (And Nobody Knew)
+The Stealth Fighter That Was Shot Down by a 1960s Missile
+The Special Forces Raid That Freed 500 Prisoners in 20 Minutes
+How 4 Nuclear Submarines Silently Collided Under the Atlantic
+The Sound Weapon That Made 100 Soldiers Instantly Retreat
+Why a Single $500M Destroyer Was Disabled by a Single $10 Bolt
+The Cold War Spy Who Photographed 1,000 Secret Soviet Blueprints
+How 1 Navy Pilot Survived 6 Days Behind Enemy Lines in Bosnia
+The Nuclear Bomber That Dropped a Live Bomb on South Carolina
+Why the US Air Force Spent $10 Billion on a Jet That Never Flew
+The Secret Satellite That Exposed 400 Underground Soviet Silos

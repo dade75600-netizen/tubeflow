@@ -39,7 +39,7 @@ class ScriptGenerator:
                 return yaml.safe_load(f)
         return {}
 
-    def generate_script(self, topic: str) -> VideoScript:
+    def generate_script(self, topic: str, profile: dict = None) -> VideoScript:
         """
         Generates a structured YouTube Shorts script for the given topic
         using Gemini 2.5 Flash and Pydantic structured output.
@@ -50,27 +50,76 @@ class ScriptGenerator:
         channel_cfg = self.config.get("channel", {})
         niche = channel_cfg.get("niche", "military aviation")
         tone = channel_cfg.get("tone", "dramatic, intense, epic")
-        max_duration = self.config.get("video", {}).get("max_duration_seconds", 50)
+        
+        # Calculate target duration and scenes based on the channel profile
+        if profile:
+            target_duration = profile.get("video_duration_target", 50)
+            tone = profile.get("script_tone", tone)
+        else:
+            target_duration = self.config.get("video", {}).get("max_duration_seconds", 50)
+        
+        # Each scene averages 5 seconds
+        num_scenes = max(6, int(target_duration / 5.0))
 
-        # Build prompt instructing Gemini to write a high-retention vertical script
-        prompt = f"""
+        # Check script tone profile to apply custom hook/narrative constraints
+        if profile and profile.get("script_tone") == "classified_documentary":
+            prompt = f"""
+You are the lead scriptwriter for the YouTube Shorts channel '{channel_cfg.get('name', 'MilitaryDeepOps')}', specializing in '{niche}'.
+Write a highly engaging, high-retention video script about the topic/title: "{topic}".
+
+Your writing style must be: Classified documentary style. Sound like an authoritative ex-CIA intelligence analyst revealing top-secret secrets. The tone is intense, dramatic, precise, and suspenseful.
+
+Key constraints for massive virality and high retention:
+1. Generate exactly {num_scenes} sequential scenes to hit a target duration of approximately {target_duration} seconds.
+2. Hook (First 15 seconds): Start IMMEDIATELY with a specific, shocking fact (such as a date, real name, statistic, or number). NEVER start with intros like "In this video...", "Welcome back...", or "Have you ever wondered...". Get straight to the shock fact.
+3. 4-Act Narrative Structure:
+   - Act 1: Shock Hook (0-15 seconds) - Startle the viewer with a shocking reveal.
+   - Act 2: Context (approx 30 seconds) - Lay out the background history or details.
+   - Act 3: Dramatic Escalation - Build up tension or raise the stakes.
+   - Act 4: Final Revelation with a Twist - Deliver a dramatic payoff or unexpected twist.
+4. Open Loop: In the exact middle of the script (around scene {num_scenes // 2}), plant a compelling unresolved mystery or question that will only be solved at the very end to prevent drops in retention (e.g., "But the radar screens showed something impossible. You will see what it was in a moment.").
+5. Pacing: Short, punchy, high-impact sentences. Keep visual rhythm very fast. Every single scene narration must be under 10-15 words and have an estimated duration between 4.0 and 6.0 seconds.
+6. CTA for Comments: The very last sentence of the script must end with a provocative open question that forces viewers to leave comments (e.g., "What would have happened if that pilot had pulled the trigger?").
+7. Seamless Loop: The last word of the script must loop back cleanly into the first word of the video for endless play loops.
+8. Language: English.
+9. Stock footage queries: For each scene, specify an ultra-specific search query of 3-5 words. Use terms like 'military', 'navy', 'air force', 'fighter jet', or 'warfare' when relevant. Avoid generic queries.
+"""
+        elif profile and profile.get("script_tone") == "aviation_documentary":
+            prompt = f"""
+You are the lead scriptwriter for the YouTube Shorts channel '{channel_cfg.get('name', 'CivilAviationLords')}', specializing in '{niche}'.
+Write a highly engaging, high-retention video script about the topic/title: "{topic}".
+
+Your writing style must be: Technical aviation documentary style. Sound like a professional captain analyzing flight recorder logs or cockpit emergencies. The tone is suspenseful, technical, and educational.
+
+Key constraints:
+1. Generate exactly {num_scenes} sequential scenes to hit a target duration of approximately {target_duration} seconds.
+2. Hook (First 15 seconds): Start immediately with the flight context and emergency (e.g. "Boeing 737 flight 243 was climbing through 24,000 feet when the cabin roof peeled open..."). No introductory fluff.
+3. Narrative Structure: Introduce flight parameters -> build technical issue -> pilot decision point -> final resolution and safety lesson.
+4. Open Loop: Plant a question in the middle of the script (around scene {num_scenes // 2}) about whether the plane will survive, to be resolved at the end.
+5. Pacing: Every scene narration must be short, under 10-15 words, with duration between 4.0 and 6.0 seconds.
+6. Language: English.
+7. Stock footage queries: Specify queries related to commercial airplanes, passenger aviation, flight deck, cockpit instrumentation, or runway landings.
+"""
+        else:
+            # Fallback to the original prompt
+            prompt = f"""
 You are the lead scriptwriter for the YouTube Shorts channel '{channel_cfg.get('name', 'MilitaryDeepOps')}', specializing in '{niche}'.
 Write a highly engaging, high-retention video script about the topic/title: "{topic}".
 
 Your writing style must be: {tone}.
 
 Key constraints for massive virality and monetization viability:
-1. The total duration of all scenes combined MUST NOT exceed {max_duration} seconds (keep it between 35 and 45 seconds total).
-2. The Hook (0:00 - 0:15): Start IMMEDIATELY by confirming the promise of the title in the very first sentence. NO intros, NO generic greetings like "Hey everyone". If the title talks about a specific secret, stat, or feature, the first sentence MUST state/address that immediately (e.g. if the title is "F-16 Viper: The ULTIMATE Budget Fighter Jet!", the first sentence must be: "This is the exact reason why the F-16 Viper rules the skies, despite costing a fraction of its competitors...").
-3. The Pacing: Use short, punchy, high-impact sentences. Delete every single superfluous word. Each scene MUST have a duration of 4 to 6 seconds to keep the visual rhythm extremely fast.
-4. The Open Loop: Around the middle of the script (around 20 seconds, usually in scene 3 or 4), insert an open loop—a mystery or a question that will be answered only at the end (e.g., "But there is a critical flaw that pilots fear most, and I'll show it to you in a moment.").
-5. The Payoff: Deliver fully on the promise of the title by the end of the video. The open loop MUST be resolved, and the promise of the title must be completed truthfully without lying to the viewer.
-6. Seamless Loop: The final sentence must end mid-thought or connect grammatically and thematically back to the very first sentence of the script, creating a seamless loop.
+1. The total duration of all scenes combined MUST NOT exceed {target_duration} seconds (keep it between 35 and 45 seconds total, generating exactly {num_scenes} scenes).
+2. The Hook (0:00 - 0:15): Start IMMEDIATELY by confirming the promise of the title in the very first sentence. NO intros, NO generic greetings.
+3. The Pacing: Use short, punchy, high-impact sentences. Each scene MUST have a duration of 4 to 6 seconds.
+4. The Open Loop: Around the middle of the script, insert an open loop—a mystery or a question that will be answered only at the end.
+5. The Payoff: Deliver fully on the promise of the title by the end of the video.
+6. Seamless Loop: The final sentence must connect grammatically and thematically back to the very first sentence of the script.
 7. Scribe in standard English.
-8. For each scene, specify an ultra-specific search query for stock footage. The query must be highly specific to the military/tactical niche, explicitly incorporating terms like 'military', 'navy', 'air force', 'fighter jet', or 'warfare' when relevant, and avoiding any generic words. For example, if a scene discusses a steam catapult, the query must be 'aircraft carrier flight deck, fighter jet taking off, steam catapult launch, military aviation' rather than just 'steam'.
+8. For each scene, specify an ultra-specific search query for stock footage. Incorporate niche-specific terms like 'military', 'navy', 'air force', 'fighter jet', or 'warfare' when relevant.
 """
 
-        print(f"Generating script for topic: '{topic}' using Gemini...")
+        print(f"Generating script for topic: '{topic}' using Gemini (Target Duration: {target_duration}s, Scenes: {num_scenes})...")
         
         # Call the Gemini API with structured schema configuration
         response = self.client.models.generate_content(
