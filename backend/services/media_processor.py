@@ -69,6 +69,53 @@ class MediaProcessor:
             # Modern warfare (default)
             return ["military drone strike", "special forces night operation", "tank battlefield smoke", "military helicopter combat"]
 
+    def _detect_aviation_pool(self, text: str) -> list:
+        """
+        Returns aviation-specific Pexels search fallback queries based on content context.
+        Pools: crash/emergency, cockpit/technical, atmosphere/flight, investigation.
+        """
+        text_lower = text.lower()
+        crash_keywords = [
+            "crash", "killed", "disaster", "explosion", "fire", "wreckage", "dead",
+            "fatal", "impact", "collide", "collision", "survivors", "emergency",
+            "accident", "minutes", "seconds", "fell", "lost", "vanish"
+        ]
+        cockpit_keywords = [
+            "cockpit", "pilot", "engine", "hydraulic", "sensor", "instrument",
+            "control", "autopilot", "stall", "altitude", "captain", "crew",
+            "mayday", "takeoff", "cvr", "fdr", "black box"
+        ]
+        investigation_keywords = [
+            "investigate", "investigator", "ntsb", "safety board", "report",
+            "finding", "cause", "reason", "why", "explained", "regulation"
+        ]
+
+        is_crash = any(k in text_lower for k in crash_keywords)
+        is_cockpit = any(k in text_lower for k in cockpit_keywords)
+        is_investigation = any(k in text_lower for k in investigation_keywords)
+
+        if is_crash:
+            return [
+                "airplane emergency landing", "aircraft wreckage dramatic",
+                "plane fire runway", "aviation rescue emergency"
+            ]
+        elif is_cockpit:
+            return [
+                "airplane cockpit instruments", "pilot controls dramatic",
+                "aircraft engine close up", "aviation radar display"
+            ]
+        elif is_investigation:
+            return [
+                "investigators wreckage site", "black box flight recorder",
+                "aviation safety inspection", "aircraft maintenance hangar"
+            ]
+        else:
+            # atmosphere/flight fallback
+            return [
+                "airplane turbulence storm clouds", "aircraft night flight dramatic",
+                "jet contrail dark sky", "airport runway night"
+            ]
+
     def fetch_stock_video(self, query: str, output_path: str, duration_needed: float, profile: dict = None, title: str = None) -> bool:
         """
         Queries Pexels for a vertical video clip matching the query and downloads it.
@@ -92,19 +139,26 @@ class MediaProcessor:
             except Exception as h_err:
                 print(f"Error reading video history: {h_err}")
         
-        # Determine military profile context and blacklists
+        # Determine channel profile context and blacklists
         is_military = False
+        is_aviation = False
         if profile and profile.get("bg_pool") == "military_combat":
             is_military = True
+        elif profile and profile.get("bg_pool") == "aviation_dramatic":
+            is_aviation = True
         elif not profile:
             channel_cfg = self.config.get("channel", {})
             niche = str(channel_cfg.get("niche", "")).lower()
             if "military" in niche or "combat" in niche or "stealth" in niche:
                 is_military = True
+            elif "aviation" in niche or "civil" in niche or "flight" in niche:
+                is_aviation = True
 
-        # Blacklist logic
+        # Blacklist logic — aviation uses its own stricter exclusion list
         if is_military:
             blacklist_operators = ' -civilian -commercial -protest -vintage -antique -parade'
+        elif is_aviation:
+            blacklist_operators = ' -vacation -tourism -happy -celebration -luxury -business'
         else:
             blacklist_operators = ' -commercial -passenger -airliner -airport_terminal -vintage -antique'
 
@@ -131,11 +185,12 @@ class MediaProcessor:
             
             videos = data.get("videos", [])
             if not videos:
-                # Sourcing pool fallback
+                # Sourcing pool fallback — route to correct pool based on channel profile
+                check_text = title if title else query
                 if is_military:
-                    # Detect correct pool based on title keyword, else query keyword
-                    check_text = title if title else query
                     fallbacks = self._detect_military_pool(check_text)
+                elif is_aviation:
+                    fallbacks = self._detect_aviation_pool(check_text)
                 else:
                     fallbacks = ["military jet", "fighter jet", "stealth aircraft", "aircraft carrier launch", "military aircraft cockpit"]
                 

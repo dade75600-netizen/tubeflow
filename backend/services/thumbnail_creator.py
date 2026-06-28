@@ -68,33 +68,36 @@ class ThumbnailCreator:
         Converts the topic query into a dramatic, high-impact punchline (MAX 3 WORDS in ALL CAPS).
         """
         is_military = False
+        is_aviation = False
         if profile and profile.get("thumbnail_palette") == "red_white":
             is_military = True
+        elif profile and profile.get("thumbnail_palette") == "yellow_orange":
+            is_aviation = True
         elif category == "military":
             is_military = True
 
         if is_military:
             # Exclusive military hook pool
             military_pool = [
-                "CLASSIFIED", "TOP SECRET", "NEVER TOLD", "THEY KNEW", 
+                "CLASSIFIED", "TOP SECRET", "NEVER TOLD", "THEY KNEW",
                 "BURIED TRUTH", "ZERO SURVIVORS", "LAST MISSION", "SILENT WAR"
             ]
+            pool = military_pool
+        elif is_aviation:
+            # Exclusive aviation disaster hook pool
+            aviation_pool = [
+                "FINAL SECONDS", "NO SURVIVORS", "LAST WORDS", "PILOT ERROR",
+                "SYSTEM FAILED", "BLACK BOX", "NEVER TOLD", "THEY KNEW"
+            ]
+            pool = aviation_pool
         else:
-            military_pool = [
-                "MOST FEARED", "TOP SECRET", "BORN TO KILL", "LETHAL FORCE", 
-                "NO ESCAPE", "PURE POWER", "DEADLY BEAST", "WAR MACHINE", 
-                "TOTAL POWER", "PREDATOR", "FATAL BLOW", "AIR DOMINANCE", 
+            pool = [
+                "MOST FEARED", "TOP SECRET", "BORN TO KILL", "LETHAL FORCE",
+                "NO ESCAPE", "PURE POWER", "DEADLY BEAST", "WAR MACHINE",
+                "TOTAL POWER", "PREDATOR", "FATAL BLOW", "AIR DOMINANCE",
                 "MAX SPEED", "ATTACK MODE", "FIREPOWER"
             ]
-        
-        civil_pool = [
-            "CLOSE CALL", "NEAR DISASTER", "INSANE LANDING", "MEGA JET", 
-            "SUPERSONIC", "JET AGE", "FLIGHT CRITICAL", "PILOT ERROR?", 
-            "CRITICAL FAULT", "LOST CONTROL", "EXTREME WIND", "SKY BEAST", 
-            "ENGINE FAIL", "SAVED LIVES"
-        ]
-        
-        pool = military_pool if category == "military" else civil_pool
+
         # Deterministic stable choice
         index = sum(ord(c) for c in query) % len(pool)
         return pool[index]
@@ -117,37 +120,54 @@ class ThumbnailCreator:
         
         # 1. Detect Category & Determine Settings
         category = self._detect_category(query)
-        
-        # Resolve military configuration context
+
+        # Resolve is_military and is_aviation configuration context
         is_military = False
+        is_aviation = False
         if profile and profile.get("thumbnail_palette") == "red_white":
             is_military = True
+            category = "military"  # Force correct category from profile
+        elif profile and profile.get("thumbnail_palette") == "yellow_orange":
+            is_aviation = True
+            category = "civil"  # Force correct category from profile
         elif not profile and category == "military":
             is_military = True
-            
-        # Default arrow option if military active
-        if is_military:
+
+        # Default arrow/circle options from profile
+        if is_military and profile and profile.get("thumbnail_add_arrow", True):
             add_arrow = True
+        if is_aviation and profile and profile.get("thumbnail_add_circle", True):
+            add_circle = True
 
         punchline_text = punchline.upper() if punchline else self._generate_punchline(query, category, profile)
         print(f"Creating thumbnail: [Category: {category}] [Punchline: {punchline_text}] for '{query}'")
-        
+
         # 2. Fetch Background from Pexels
         bg_downloaded = False
         temp_bg_path = output_path.replace(".jpg", "_raw.jpg")
-        blacklist_suffix = " -commercial -passenger -airliner -vintage"
-        
+
+        # Channel-specific Pexels blacklist suffix
+        if is_military:
+            blacklist_suffix = " -commercial -passenger -airliner -vintage"
+        elif is_aviation:
+            blacklist_suffix = " -vacation -tourism -happy -celebration -luxury -business"
+        else:
+            blacklist_suffix = " -commercial -passenger -airliner -vintage"
+
         if self.pexels_key:
             headers = {"Authorization": self.pexels_key}
-            
+
             cleaned_query = re.sub(r'[^a-zA-Z0-9\s-]', '', query).strip()
             search_keywords = " ".join(cleaned_query.split()[:4])
-            
-            # Sfondo: preferire immagini scure/notturne per la nicchia militare
+
+            # Military: prefer dark/night imagery; Aviation: prefer dramatic sky/storm; Default: plain query
             if is_military:
                 primary_search = f"{search_keywords} night{blacklist_suffix}"
+            elif is_aviation:
+                primary_search = f"{search_keywords} dramatic storm{blacklist_suffix}"
             else:
                 primary_search = f"{search_keywords}{blacklist_suffix}"
+
             
             try:
                 url = f"https://api.pexels.com/v1/search?query={requests.utils.quote(primary_search)}&per_page=1&orientation=landscape"
@@ -358,19 +378,24 @@ class ThumbnailCreator:
             if y_start < 468:
                 y_start = 468
             
-            # 9. Semi-transparent black rectangle backing
+            # 9. Semi-transparent accent rectangle backing
+            # Aviation: orange (255, 140, 0) accent bar; Military/default: black
             max_width = max(line_widths) if line_widths else 0
             box_width = max_width + 60
             box_height = total_text_height + 40
             box_x = (1280 - box_width) // 2
             box_y = y_start - 20
-            
+
             text_bg_overlay = Image.new("RGBA", (1280, 720), (0, 0, 0, 0))
             bg_draw = ImageDraw.Draw(text_bg_overlay)
+            if is_aviation:
+                accent_fill = (255, 140, 0, 178)  # Orange 70% opacity
+            else:
+                accent_fill = (0, 0, 0, 153)  # Black 60% opacity
             bg_draw.rounded_rectangle(
                 [box_x, box_y, box_x + box_width, box_y + box_height],
                 radius=15,
-                fill=(0, 0, 0, 153) # 60% opacity black
+                fill=accent_fill
             )
             
             img = img.convert("RGBA")
@@ -388,11 +413,13 @@ class ThumbnailCreator:
                 x = (1280 - line_w) // 2 - line_bbox[0]
                 y = running_y - line_bbox[1]
                 
-                # Check palette selection (military uses red_white which has white-only text text_fill)
+                # Text fill: military = white-only; aviation = yellow line1 / white line2; default = yellow/white
                 if is_military:
-                    text_fill = (255, 255, 255) # White only
+                    text_fill = (255, 255, 255)  # White only
+                elif is_aviation:
+                    text_fill = (255, 220, 0) if i == 0 else (255, 255, 255)  # Yellow / White
                 else:
-                    text_fill = (255, 220, 0) if i == 0 else (255, 255, 255) # Yellow/White
+                    text_fill = (255, 220, 0) if i == 0 else (255, 255, 255)  # Yellow / White
                     
                 stroke_width = 8
                 

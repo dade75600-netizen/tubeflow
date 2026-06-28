@@ -34,7 +34,6 @@ class Pipeline:
     def __init__(self, config_path: str = "config.yaml"):
         self.config_path = config_path
         self.config = self.load_config()
-        self.queue_file = "topics_queue.txt"
         
         # Resolve active channel profile from configuration channel name
         channel_name = self.config.get("channel", {}).get("name", "").lower()
@@ -43,6 +42,9 @@ class Pipeline:
         else:
             self.profile = CHANNEL_CONFIGS["military"]
         print(f"[Pipeline] Resolved active channel profile: {self.profile.get('channel_handle')}")
+        
+        # Route to channel-specific topics queue file
+        self.queue_file = self.profile.get("topics_queue_file", "topics_queue.txt")
 
     def load_config(self) -> dict:
         """Loads configuration from yaml."""

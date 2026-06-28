@@ -86,19 +86,35 @@ Key constraints for massive virality and high retention:
 """
         elif profile and profile.get("script_tone") == "aviation_documentary":
             prompt = f"""
-You are the lead scriptwriter for the YouTube Shorts channel '{channel_cfg.get('name', 'CivilAviationLords')}', specializing in '{niche}'.
-Write a highly engaging, high-retention video script about the topic/title: "{topic}".
+You are the lead documentary scriptwriter for the YouTube Shorts channel '{channel_cfg.get('name', 'CivilAviationLords')}', specializing in aviation disasters and near-misses.
+Write a gripping, BBC/Netflix-style documentary script about: "{topic}".
 
-Your writing style must be: Technical aviation documentary style. Sound like a professional captain analyzing flight recorder logs or cockpit emergencies. The tone is suspenseful, technical, and educational.
+Your writing style: Authoritative, precise, and emotionally resonant — like a seasoned aviation safety investigator narrating a National Geographic documentary. Respectful of victims. Scientifically accurate.
 
-Key constraints:
-1. Generate exactly {num_scenes} sequential scenes to hit a target duration of approximately {target_duration} seconds.
-2. Hook (First 15 seconds): Start immediately with the flight context and emergency (e.g. "Boeing 737 flight 243 was climbing through 24,000 feet when the cabin roof peeled open..."). No introductory fluff.
-3. Narrative Structure: Introduce flight parameters -> build technical issue -> pilot decision point -> final resolution and safety lesson.
-4. Open Loop: Plant a question in the middle of the script (around scene {num_scenes // 2}) about whether the plane will survive, to be resolved at the end.
-5. Pacing: Every scene narration must be short, under 10-15 words, with duration between 4.0 and 6.0 seconds.
-6. Language: English.
-7. Stock footage queries: Specify queries related to commercial airplanes, passenger aviation, flight deck, cockpit instrumentation, or runway landings.
+MANDATORY CONSTRAINTS for maximum virality and retention:
+
+1. Generate exactly {num_scenes} sequential scenes for a target duration of approximately {target_duration} seconds.
+
+2. HOOK (First 3 scenes — first 15 seconds): Begin IMMEDIATELY with the most dramatic moment of the incident. Lead with a specific timestamp, a cockpit voice recorder quote, or a stark statistic. Example: "At 17:06, the cockpit voice recorder captured one final word." NEVER start with "In this video", "Today we look at", "Have you ever wondered", or any generic intro.
+
+3. FIVE-ACT DISASTER NARRATIVE STRUCTURE:
+   - Act 1 — Impact (scenes 1-3): Open IN MEDIAS RES at the worst moment. The crash, the alarm, the silence.
+   - Act 2 — The Victims (scenes 4-6): Brief, humanizing flashback. Normal flight. Who were the people aboard.
+   - Act 3 — The Chain of Errors (scenes 7-13): Meticulous reconstruction. Each domino that fell. Mechanical failures, human errors, systemic failures. Build dread.
+   - Act 4 — Final Seconds (scenes 14-17): Real-time reconstruction of the last moments using CVR/FDR data. Maximum tension.
+   - Act 5 — Legacy (scenes 18-{num_scenes}): What changed. Lives saved by this tragedy. New regulations, new procedures, new technology born from this disaster.
+
+4. OPEN LOOP: At scene {num_scenes // 2} (the exact midpoint), plant a shocking detail that raises a new unresolved question — something investigators discovered that defied explanation. Reveal the answer only in Act 5.
+
+5. ETHICAL CONSTRAINT: Never glorify or sensationalize the disaster. Always close with what aviation safety gained from this tragedy. The tone must honor the victims.
+
+6. CTA (very last sentence): End with a moral dilemma question that invites viewer debate in comments. Example: "Would you have made the same call as the captain — or would you have overridden him?" Force a YES or NO choice.
+
+7. PACING: Every single scene narration must be under 12 words and have an estimated duration strictly between 4.0 and 6.0 seconds.
+
+8. STOCK FOOTAGE QUERIES: For each scene, specify a highly targeted Pexels query related to: commercial aircraft, cockpit instrumentation, flight deck, airport runway, radar screens, aviation investigators, wreckage, emergency services, or storm clouds. NEVER use military terms.
+
+9. Language: English only.
 """
         else:
             # Fallback to the original prompt
