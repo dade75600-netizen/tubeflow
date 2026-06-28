@@ -1,0 +1,66 @@
+name: AI Performance Analysis Loop
+
+on:
+  schedule:
+      # Esegue il loop di ottimizzazione ogni Domenica alle 23:00 UTC
+          - cron: '0 23 * * 0'
+            workflow_dispatch:
+                inputs:
+                      channel:
+                              description: 'Channel to analyze (military / aviation)'
+                                      required: false
+                                              default: 'military'
+
+                                              jobs:
+                                                analyze:
+                                                    runs-on: ubuntu-latest
+                                                        permissions:
+                                                              contents: write
+
+                                                                  steps:
+                                                                        - name: Checkout repository
+                                                                                uses: actions/checkout@v4
+
+                                                                                      - name: Set up Python
+                                                                                              uses: actions/setup-python@v5
+                                                                                                      with:
+                                                                                                                python-version: '3.10'
+                                                                                                                          cache: 'pip'
+                                                                                                                          
+                                                                                                                                - name: Install dependencies
+                                                                                                                                        run: |
+                                                                                                                                                  pip install --upgrade pip
+                                                                                                                                                            pip install -r requirements.txt
+                                                                                                                                                            
+                                                                                                                                                                  - name: Create secrets files
+                                                                                                                                                                          run: |
+                                                                                                                                                                                    echo '${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}' > client_secrets.json
+                                                                                                                                                                                              echo '${{ secrets.YOUTUBE_TOKEN_MILITARY_JSON }}' > token_military.json
+                                                                                                                                                                                                        echo '${{ secrets.YOUTUBE_TOKEN_AVIATION_JSON }}' > token_aviation.json
+                                                                                                                                                                                                        
+                                                                                                                                                                                                              - name: Create .env file
+                                                                                                                                                                                                                      run: |
+                                                                                                                                                                                                                                echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+                                                                                                                                                                                                                                          echo "YOUTUBE_SECRETS_FILE=client_secrets.json" >> .env
+                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                - name: Run Analytics Engine & Improvement Agent (Military)
+                                                                                                                                                                                                                                                        if: github.event.inputs.channel == 'military' || github.event_name == 'schedule'
+                                                                                                                                                                                                                                                                env:
+                                                                                                                                                                                                                                                                          ACTIVE_CHANNEL: military
+                                                                                                                                                                                                                                                                                  run: |
+                                                                                                                                                                                                                                                                                            python -m backend.pipeline --analyze --channel military
+                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                  - name: Run Analytics Engine & Improvement Agent (Aviation)
+                                                                                                                                                                                                                                                                                                          if: github.event.inputs.channel == 'aviation' || github.event_name == 'schedule'
+                                                                                                                                                                                                                                                                                                                  env:
+                                                                                                                                                                                                                                                                                                                            ACTIVE_CHANNEL: aviation
+                                                                                                                                                                                                                                                                                                                                    run: |
+                                                                                                                                                                                                                                                                                                                                              python -m backend.pipeline --analyze --channel aviation
+                                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                    - name: Commit optimized queues
+                                                                                                                                                                                                                                                                                                                                                            run: |
+                                                                                                                                                                                                                                                                                                                                                                      git config --global user.name "github-actions[bot]"
+                                                                                                                                                                                                                                                                                                                                                                                git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                                                                                                                                                                                                                                                                                                                                                                                          git add topics_queue.txt topics_queue_military.txt topics_queue_aviation.txt
+                                                                                                                                                                                                                                                                                                                                                                                                    git commit -m "feat(ai): append new optimized topics based on performance analytics [skip ci]" || echo "No changes to commit"
+                                                                                                                                                                                                                                                                                                                                                                                                              git push
