@@ -58,7 +58,10 @@ class MediaProcessor:
         is_special_ops = any(k in text_lower for k in special_ops_keywords)
         
         if is_cold_war:
-            return ["nuclear missile silo", "cold war bunker", "submarine periscope", "military radar station"]
+            return [
+                "nuclear missile silo", "cold war bunker", "submarine periscope", "military radar station",
+                "submarine underwater dark", "military submarine periscope ocean", "nuclear submarine navy", "cold war military bunker dark"
+            ]
         elif is_special_ops:
             return ["soldier night vision", "special forces training", "military parachute jump", "sniper position"]
         else:

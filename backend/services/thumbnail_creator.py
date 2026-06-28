@@ -157,44 +157,26 @@ class ThumbnailCreator:
                 data = response.json()
                 photos = data.get("photos", [])
                 
-                # Sourcing fallback search
-                if not photos:
-                    if is_military:
-                        military_bg_pool = [
-                            "fighter jet night", "stealth fighter jet dark", "military aviation night", 
-                            "supersonic jet night", "aircraft carrier night"
-                        ]
-                    else:
-                        military_bg_pool = [
-                            "fighter jet cockpit", "stealth fighter jet", "military aviation", 
-                            "supersonic jet flight", "aircraft carrier deck"
-                        ]
-                        
-                    civil_bg_pool = [
-                        "commercial plane flight", "airbus landing", "boeing aircraft", 
-                        "cessna cockpit", "private jet runway"
-                    ]
-                    
-                    pool = military_bg_pool if category == "military" else civil_bg_pool
-                    fallback_term = random.choice(pool)
-                    fallback_search = f"{fallback_term}{blacklist_suffix}"
-                    print(f"Pexels search returned no photos. Trying fallback: '{fallback_search}'...")
-                    
-                    fallback_url = f"https://api.pexels.com/v1/search?query={requests.utils.quote(fallback_search)}&per_page=1&orientation=landscape"
-                    response = requests.get(fallback_url, headers=headers, timeout=15)
-                    response.raise_for_status()
-                    data = response.json()
-                    photos = data.get("photos", [])
-                
                 if photos:
                     img_url = photos[0].get("src", {}).get("large2x") or photos[0].get("src", {}).get("large")
                     if img_url:
-                        print(f"Downloading Pexels image: {img_url}...")
-                        img_data = requests.get(img_url, timeout=15)
-                        img_data.raise_for_status()
-                        with open(temp_bg_path, 'wb') as f:
-                            f.write(img_data.content)
-                        bg_downloaded = True
+                        # Combine Pexels page URL, image asset URL, and alt description for comprehensive blacklist checks
+                        page_url = photos[0].get("url", "")
+                        alt_text = photos[0].get("alt", "")
+                        check_metadata = f"{img_url} {page_url} {alt_text}".lower()
+                        
+                        blacklist_words = ["airline", "aeroflot", "airport", "passenger", "civil", "commercial"]
+                        if any(w in check_metadata for w in blacklist_words):
+                            print(f"Pexels image rejected due to blacklist match in metadata: {check_metadata}")
+                        else:
+                            print(f"Downloading Pexels image: {img_url}...")
+                            img_data = requests.get(img_url, timeout=15)
+                            img_data.raise_for_status()
+                            with open(temp_bg_path, 'wb') as f:
+                                f.write(img_data.content)
+                            bg_downloaded = True
+                else:
+                    print("Pexels search returned no photos.")
             except Exception as e:
                 print(f"Pexels API query or image download failed: {e}")
         else:
@@ -204,11 +186,25 @@ class ThumbnailCreator:
             # 3. Create or Load Image & Resize
             if bg_downloaded and os.path.exists(temp_bg_path):
                 img = Image.open(temp_bg_path)
+                img = img.resize((1280, 720), Image.Resampling.LANCZOS)
             else:
-                print("Using fallback solid dark background RGB(12,18,28)...")
+                print("Using fallback solid dark background RGB(12,18,28) with military texture...")
                 img = Image.new("RGB", (1280, 720), color=(12, 18, 28))
-            
-            img = img.resize((1280, 720), Image.Resampling.LANCZOS)
+                
+                # Draw military green grid texture overlay
+                overlay = Image.new("RGBA", (1280, 720), (0, 0, 0, 0))
+                overlay_draw = ImageDraw.Draw(overlay)
+                grid_size = 40
+                
+                # Thin military green lines (20, 40, 20) semi-transparent (alpha 80)
+                for x in range(0, 1280, grid_size):
+                    overlay_draw.line([(x, 0), (x, 720)], fill=(20, 40, 20, 80), width=1)
+                for y in range(0, 720, grid_size):
+                    overlay_draw.line([(0, y), (1280, y)], fill=(20, 40, 20, 80), width=1)
+                
+                img = img.convert("RGBA")
+                img = Image.alpha_composite(img, overlay)
+                img = img.convert("RGB")
             
             # 4. Boost Contrast and Saturation
             # Military contrast boost: 1.5, Civil contrast boost: 1.3
