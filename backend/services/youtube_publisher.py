@@ -1,5 +1,6 @@
 import os
 import json
+import yaml
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -19,8 +20,31 @@ TOKEN_FILE = os.getenv('YOUTUBE_TOKEN_FILE', 'token.json')
 class YouTubePublisher:
     code_verifier = None
 
-    def __init__(self, secrets_file=SECRETS_FILE, token_file=TOKEN_FILE):
+    def __init__(self, secrets_file=SECRETS_FILE, token_file=None):
         self.secrets_file = secrets_file
+        
+        # Dynamically determine the token file based on the active channel name in config.yaml
+        if token_file is None:
+            active_channel = "military"
+            if os.path.exists("config.yaml"):
+                try:
+                    with open("config.yaml", "r", encoding="utf-8") as f:
+                        cfg = yaml.safe_load(f) or {}
+                    name = cfg.get("channel", {}).get("name", "").lower()
+                    if "aviation" in name or "civil" in name or "lords" in name:
+                        active_channel = "aviation"
+                except Exception:
+                    pass
+            
+            if active_channel == "aviation":
+                token_file = "token_aviation.json"
+            else:
+                token_file = "token_military.json"
+                
+            # Fallback to default token.json if specific token file doesn't exist yet
+            if not os.path.exists(token_file) and os.path.exists("token.json"):
+                token_file = "token.json"
+                    
         self.token_file = token_file
         self.credentials = None
         self.load_credentials()
@@ -77,19 +101,41 @@ class YouTubePublisher:
             include_granted_scopes='true',
             prompt='consent'
         )
-        # Store the code_verifier for the callback
-        YouTubePublisher.code_verifier = getattr(flow, 'code_verifier', None)
+        # Store the code_verifier for the callback (memory and disk cache)
+        verifier = getattr(flow, 'code_verifier', None)
+        YouTubePublisher.code_verifier = verifier
+        if verifier:
+            try:
+                with open('.code_verifier', 'w', encoding='utf-8') as f:
+                    f.write(verifier)
+            except Exception as e:
+                print(f"Warning: Could not save .code_verifier to disk: {e}")
         return auth_url, state
 
     def fetch_token(self, redirect_uri: str, authorization_response: str):
         """Exchanges authorization code for credentials and saves it."""
         flow = self.get_flow(redirect_uri)
-        # Restore the code_verifier from the class-level storage
-        if YouTubePublisher.code_verifier:
-            flow.code_verifier = YouTubePublisher.code_verifier
+        # Restore the code_verifier from the class-level storage or disk cache
+        verifier = YouTubePublisher.code_verifier
+        if not verifier and os.path.exists('.code_verifier'):
+            try:
+                with open('.code_verifier', 'r', encoding='utf-8') as f:
+                    verifier = f.read().strip()
+            except Exception as e:
+                print(f"Warning: Could not read .code_verifier from disk: {e}")
+
+        if verifier:
+            flow.code_verifier = verifier
         flow.fetch_token(authorization_response=authorization_response)
         self.credentials = flow.credentials
         self.save_credentials()
+
+        # Clean up disk cache after successful exchange
+        if os.path.exists('.code_verifier'):
+            try:
+                os.remove('.code_verifier')
+            except Exception:
+                pass
 
     def get_service(self):
         """Returns the authorized YouTube API service object."""

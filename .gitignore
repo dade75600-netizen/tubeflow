@@ -7,6 +7,9 @@ __pycache__/
 .env
 client_secrets.json
 token.json
+token_military.json
+token_aviation.json
+.code_verifier
 
 # Temporary working directories
 temp/
