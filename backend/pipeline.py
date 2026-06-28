@@ -23,7 +23,7 @@ from backend.services.tiktok_publisher import TikTokPublisher
 from backend.services.script_generator import ScriptGenerator
 from backend.services.media_processor import MediaProcessor
 from backend.services.video_editor import VideoEditor
-from backend.services.thumbnail_creator import ThumbnailCreator
+from backend.services.first_frame_engineer import FirstFrameEngineer
 from backend.services.notifier import Notifier
 from backend.channel_config import CHANNEL_CONFIGS
 
@@ -34,17 +34,17 @@ class Pipeline:
     def __init__(self, config_path: str = "config.yaml"):
         self.config_path = config_path
         self.config = self.load_config()
-        
+
         # Resolve active channel profile from configuration channel name
         channel_name = self.config.get("channel", {}).get("name", "").lower()
         if "aviation" in channel_name or "civil" in channel_name or "lords" in channel_name:
             self.profile = CHANNEL_CONFIGS["aviation"]
+            self.queue_file = "topics_queue_aviation.txt"
         else:
             self.profile = CHANNEL_CONFIGS["military"]
+            self.queue_file = "topics_queue_military.txt"
         print(f"[Pipeline] Resolved active channel profile: {self.profile.get('channel_handle')}")
-        
-        # Route to channel-specific topics queue file
-        self.queue_file = self.profile.get("topics_queue_file", "topics_queue.txt")
+        print(f"[Pipeline] Using queue file: {self.queue_file}")
 
     def load_config(self) -> dict:
         """Loads configuration from yaml."""
@@ -137,13 +137,13 @@ class Pipeline:
         final_thumbnail_path = os.path.join("outputs", f"{run_id}.jpg")
 
         # Instantiate Services
-        script_gen = ScriptGenerator(config_path=self.config_path)
-        media_proc = MediaProcessor(config_path=self.config_path)
-        video_edit = VideoEditor(config_path=self.config_path)
-        thumb_creator = ThumbnailCreator(config_path=self.config_path)
-        publisher = YouTubePublisher()
+        script_gen      = ScriptGenerator(config_path=self.config_path)
+        media_proc      = MediaProcessor(config_path=self.config_path)
+        video_edit      = VideoEditor(config_path=self.config_path)
+        first_frame_eng = FirstFrameEngineer(config_path=self.config_path)
+        publisher       = YouTubePublisher()
         tiktok_publisher = TikTokPublisher()
-        notifier = Notifier()
+        notifier        = Notifier()
 
         try:
             # Step 1: Generate Script
@@ -236,12 +236,26 @@ class Pipeline:
                     print("No background music tracks found. Proceeding without background music.")
                     bg_music_path = ""
 
+            # Step 4b: Generate hook frame (first 1.5s of Short) and swoosh SFX
+            hook_frame_path = os.path.join(temp_dir, "hook_frame.jpg")
+            swoosh_path     = os.path.join(temp_dir, "swoosh.wav")
+            hook_ok = first_frame_eng.create_hook_frame(
+                topic=topic,
+                output_path=hook_frame_path,
+                profile=self.profile
+            )
+            swoosh_ok = first_frame_eng.create_swoosh_wav(swoosh_path)
+            hook_frame_path = hook_frame_path if hook_ok else None
+            swoosh_path     = swoosh_path if swoosh_ok else None
+
             render_success = video_edit.compile_video(
                 script=script,
                 clips_paths=clips_paths,
                 voiceover_path=voiceover_path,
                 background_path=bg_music_path,
-                output_path=final_video_path
+                output_path=final_video_path,
+                first_frame_path=hook_frame_path,
+                swoosh_path=swoosh_path
             )
 
             if not render_success or not os.path.exists(final_video_path):
@@ -249,11 +263,14 @@ class Pipeline:
 
             print(f"Video compiled successfully! Saved to {final_video_path}")
 
-            # Step 5: Create Thumbnail
-            # Use script title or topic keywords for thumbnail
-            thumbnail_success = thumb_creator.create_thumbnail(topic, final_thumbnail_path, profile=self.profile)
-            if not thumbnail_success or not os.path.exists(final_thumbnail_path):
-                print("Warning: Thumbnail generation failed. Proceeding without custom thumbnail.")
+            # Step 5: Save hook frame as the upload thumbnail
+            # The hook frame is already 1080x1920 — upload it as YouTube thumbnail
+            if hook_ok and os.path.exists(hook_frame_path):
+                import shutil as _shutil
+                _shutil.copy2(hook_frame_path, final_thumbnail_path)
+                print(f"Hook frame copied as thumbnail to: {final_thumbnail_path}")
+            else:
+                print("Warning: Hook frame unavailable. Thumbnail upload will be skipped.")
                 final_thumbnail_path = None
 
             # Step 6: Publish to YouTube

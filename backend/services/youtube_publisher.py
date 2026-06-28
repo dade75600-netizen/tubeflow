@@ -145,7 +145,9 @@ class YouTubePublisher:
 
     def upload_video(self, file_path: str, title: str, description: str, tags: list, privacy_status: str = "public") -> str:
         """
-        Uploads a video to YouTube.
+        Uploads a video to YouTube as a Short.
+        #Shorts is injected into description (first line) and tags to ensure
+        the YouTube algorithm classifies the video as a Short.
         Returns the video ID on success.
         """
         if not os.path.exists(file_path):
@@ -153,15 +155,28 @@ class YouTubePublisher:
 
         youtube = self.get_service()
 
+        # ── Inject #Shorts ────────────────────────────────────────────────────
+        # Description: #Shorts must appear on the first line for algorithm pickup
+        if not description.strip().startswith("#Shorts"):
+            description = f"#Shorts\n\n{description}"
+        # Always append #Shorts at the end of description as well (belt + braces)
+        if "#Shorts" not in description[-60:]:
+            description = f"{description}\n\n#Shorts #YouTubeShorts"
+
+        # Tags: 'Shorts' and 'YouTubeShorts' must be first two entries
+        shorts_tags = ["Shorts", "YouTubeShorts"]
+        clean_tags  = [t for t in tags if t not in shorts_tags]
+        final_tags  = shorts_tags + clean_tags
+
         body = {
             'snippet': {
-                'title': title[:100],  # YouTube titles have a 100 character limit
+                'title': title[:100],  # YouTube titles limited to 100 characters
                 'description': description,
-                'tags': tags,
-                'categoryId': '22'  # 'People & Blogs' or change as desired. 20 is Gaming, 28 is Science/Tech
+                'tags': final_tags,
+                'categoryId': '22'  # People & Blogs — optimal for viral Shorts
             },
             'status': {
-                'privacyStatus': privacy_status, # "private", "public", "unlisted"
+                'privacyStatus': privacy_status,  # "private", "public", "unlisted"
                 'selfDeclaredMadeForKids': False
             }
         }
