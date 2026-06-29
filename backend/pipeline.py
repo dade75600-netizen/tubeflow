@@ -106,16 +106,18 @@ class Pipeline:
         print("TUBEFLOW: STARTING CONTENT PIPELINE RUN")
         print("="*50)
 
+        # Initialize publisher early
+        publisher = YouTubePublisher()
+
         # Refresh active YouTube token dynamically before running
         try:
             from refresh_tokens import refresh_token_file
             channel_label = "aviation" if "aviation" in self.profile.get("channel_handle", "").lower() else "military"
-            refresh_token_file(self.publisher.token_file, channel_label)
+            refresh_token_file(publisher.token_file, channel_label)
         except Exception as ref_err:
             print(f"Warning: Automatic token refresh failed during pipeline init: {ref_err}")
 
         # Check YouTube authorization if running from queue (automated mode)
-        publisher = YouTubePublisher()
         if upload and manual_topic is None and not publisher.is_authorized():
             msg = "YouTube channel is NOT authorized. Please run the local dashboard to log in and update GitHub secrets."
             print(msg)
