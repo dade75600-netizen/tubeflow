@@ -27,6 +27,7 @@ from backend.services.first_frame_engineer import FirstFrameEngineer
 from backend.services.notifier import Notifier
 from backend.services.analytics_engine import AnalyticsEngine
 from backend.services.improvement_agent import ImprovementAgent
+from backend.services.audio_mixer import AudioMixer
 from backend.channel_config import CHANNEL_CONFIGS
 
 # Load environment variables from .env
@@ -192,72 +193,36 @@ class Pipeline:
                 else:
                     raise Exception(f"Failed to source a video clip for scene {scene.scene_number}: '{scene.search_query}'")
 
-            # Step 4: Compile Final Video (Audio + Video + Subtitles)
-            import random
+            # Step 4: Resolve Audio Assets via AudioMixer
+            print("[Pipeline] Resolving audio assets (BGM, SFX)...")
+            mixer = AudioMixer()
+            channel_name = self.config.get("channel", {}).get("name", "")
+            bgm_path = mixer.get_bgm_path(channel_name)
+            swoosh_path = mixer.get_swoosh_path()
+            impact_path = mixer.get_impact_path()
             
-            default_music_path = self.config.get("music", {}).get("default_track", "assets/music/military_hybrid.mp3")
-            music_dir = os.path.dirname(default_music_path)
-            if not os.path.exists(music_dir):
-                music_dir = "assets/music"
-            
-            bg_music_path = None
-            if os.path.exists(music_dir):
-                tracks = [os.path.join(music_dir, f) for f in os.listdir(music_dir) if f.lower().endswith('.mp3')]
-                if tracks:
-                    # Non-repeating track selector logic
-                    history_file = "music_history.txt"
-                    used_tracks = []
-                    if os.path.exists(history_file):
-                        try:
-                            with open(history_file, 'r', encoding='utf-8') as h_f:
-                                used_tracks = [line.strip() for line in h_f.readlines() if line.strip()]
-                        except Exception as h_err:
-                            print(f"Error reading music history: {h_err}")
-                    
-                    available_tracks = [t for t in tracks if t not in used_tracks]
-                    if not available_tracks:
-                        print("All background music tracks have been used. Resetting music history cycle...")
-                        available_tracks = tracks
-                        used_tracks = []
-                        
-                    bg_music_path = random.choice(available_tracks)
-                    print(f"Selected background music track for this video: '{os.path.basename(bg_music_path)}'")
-                    
-                    # Record the selection
-                    used_tracks.append(bg_music_path)
-                    try:
-                        with open(history_file, 'w', encoding='utf-8') as h_f:
-                            h_f.write("\n".join(used_tracks) + "\n")
-                    except Exception as h_err:
-                        print(f"Error writing music history: {h_err}")
-            
-            if not bg_music_path:
-                if os.path.exists(default_music_path):
-                    bg_music_path = default_music_path
-                else:
-                    print("No background music tracks found. Proceeding without background music.")
-                    bg_music_path = ""
+            if bgm_path:
+                print(f"[Pipeline] Selected BGM: {bgm_path}")
 
-            # Step 4b: Generate hook frame (first 1.5s of Short) and swoosh SFX
+            # Step 4b: Generate hook frame (first 1.5s of Short)
             hook_frame_path = os.path.join(temp_dir, "hook_frame.jpg")
-            swoosh_path     = os.path.join(temp_dir, "swoosh.wav")
             hook_ok = first_frame_eng.create_hook_frame(
                 topic=topic,
                 output_path=hook_frame_path,
                 profile=self.profile
             )
-            swoosh_ok = first_frame_eng.create_swoosh_wav(swoosh_path)
             hook_frame_path = hook_frame_path if hook_ok else None
-            swoosh_path     = swoosh_path if swoosh_ok else None
 
+            # Step 4c: Compile Final Video (Audio + Video + Subtitles)
             render_success = video_edit.compile_video(
                 script=script,
                 clips_paths=clips_paths,
                 voiceover_path=voiceover_path,
-                background_path=bg_music_path,
+                background_path=bgm_path if bgm_path else "",
                 output_path=final_video_path,
                 first_frame_path=hook_frame_path,
-                swoosh_path=swoosh_path
+                swoosh_path=swoosh_path,
+                impact_path=impact_path
             )
 
             if not render_success or not os.path.exists(final_video_path):

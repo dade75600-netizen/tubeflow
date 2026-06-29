@@ -216,7 +216,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         background_path: str,
         output_path: str,
         first_frame_path: str = None,
-        swoosh_path: str = None
+        swoosh_path: str = None,
+        impact_path: str = None
     ) -> bool:
         """
         Uses FFmpeg to compile a vertical 1080x1920 YouTube Short.
@@ -230,6 +231,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         output_path     : final MP4 output path
         first_frame_path: optional 1080x1920 JPEG for the hook frame (1.5s)
         swoosh_path     : optional WAV file for the swoosh sfx on hook frame
+        impact_path     : optional WAV/MP3 file for the boom sfx on hook frame
         """
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
 
@@ -265,17 +267,26 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         if has_swoosh:
             cmd.extend(["-i", swoosh_path])
 
+        # Optional impact SFX
+        has_impact = impact_path and os.path.exists(impact_path)
+        if has_impact:
+            cmd.extend(["-i", impact_path])
+
         # ── filter_complex construction ──────────────────────────────────
         fc = []
 
         # Index tracking
-        # If hook: input 0 = hook image, inputs 1..N = clips
-        # else:    inputs 0..N-1 = clips
         clip_input_offset = 1 if has_hook else 0
         num_clips = len(clips_paths)
         voice_idx = clip_input_offset + num_clips
         bg_idx    = voice_idx + 1
-        swoosh_idx = bg_idx + 1 if bg_enabled else voice_idx + 1
+        
+        current_idx = bg_idx + 1 if bg_enabled else voice_idx + 1
+        swoosh_idx = current_idx if has_swoosh else None
+        if has_swoosh: current_idx += 1
+        
+        impact_idx = current_idx if has_impact else None
+        if has_impact: current_idx += 1
 
         video_labels = []
 
@@ -303,30 +314,40 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         escaped_ass = ass_path.replace("\\", "/").replace(":", "\\:")
         fc.append(f"[v_concat]subtitles='{escaped_ass}'[v_final]")
 
-        # Audio mixing
-        bg_volume = self.config.get("music", {}).get("background_volume", 0.10)
+        # ─── Audio Mixing Engine ─────────────────────────────────────────
+        # We ensure that the main voiceover is the FIRST input to amix, 
+        # so duration=first acts as the master clock, preventing infinite BGM loops.
         audio_inputs = []
 
-        if has_hook and has_swoosh:
-            # Pad swoosh to hook duration, mix with silence-padded voice start
-            fc.append(
-                f"[{swoosh_idx}:a]atrim=0:{hook_duration},"
-                f"asetpts=PTS-STARTPTS,volume=0.8[swoosh_trim]"
-            )
+        if has_hook:
             # Pad voiceover start by hook_duration so it lines up after hook
             fc.append(
                 f"[{voice_idx}:a]adelay={int(hook_duration * 1000)}|"
                 f"{int(hook_duration * 1000)}[voice_delayed]"
             )
-            audio_inputs = ["[voice_delayed]", "[swoosh_trim]"]
+            audio_inputs.append("[voice_delayed]")
         else:
-            audio_inputs = [f"[{voice_idx}:a]"]
+            audio_inputs.append(f"[{voice_idx}:a]")
 
         if bg_enabled:
-            fc.append(
-                f"[{bg_idx}:a]volume={bg_volume}[bg_music]"
-            )
+            # Duck BGM aggressively to allow voice to dominate
+            bg_volume = 0.12
+            fc.append(f"[{bg_idx}:a]volume={bg_volume}[bg_music]")
             audio_inputs.append("[bg_music]")
+
+        if has_hook and has_swoosh:
+            fc.append(
+                f"[{swoosh_idx}:a]atrim=0:{hook_duration},"
+                f"asetpts=PTS-STARTPTS,volume=0.8,apad[swoosh_trim]"
+            )
+            audio_inputs.append("[swoosh_trim]")
+            
+        if has_hook and has_impact:
+            fc.append(
+                f"[{impact_idx}:a]atrim=0:{hook_duration},"
+                f"asetpts=PTS-STARTPTS,volume=1.0,apad[impact_trim]"
+            )
+            audio_inputs.append("[impact_trim]")
 
         n_audio = len(audio_inputs)
         if n_audio == 1:

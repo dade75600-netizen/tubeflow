@@ -1,2 +1,5 @@
 assets/music\jamendo-472797.mp3
 assets/music\jamendo-192483.mp3
+assets/music\barren_gates__mime_-_enslaved.mp3
+assets/music\andromedik_-_with_me.mp3
+assets/music\3rd_prototype_-_dancefloor.mp3
