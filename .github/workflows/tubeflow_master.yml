@@ -49,7 +49,7 @@ jobs:
       - name: Create secrets files
         env:
           CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
-          MILITARY_TOKEN: ${{ secrets.YOUTUBE_TOKEN_MILITARY_JSON }}
+          MILITARY_TOKEN: ${{ secrets.YOUTUBE_TOKEN_JSON }}
         run: |
           echo "$CLIENT_SECRETS" > client_secrets.json
           echo "$MILITARY_TOKEN" > token.json
@@ -103,7 +103,7 @@ jobs:
       - name: Create secrets files
         env:
           CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
-          AVIATION_TOKEN: ${{ secrets.YOUTUBE_TOKEN_AVIATION_JSON }}
+          AVIATION_TOKEN: ${{ secrets.YOUTUBE_TOKEN_JSON }}
         run: |
           echo "$CLIENT_SECRETS" > client_secrets.json
           echo "$AVIATION_TOKEN" > token.json
