@@ -48,11 +48,11 @@ jobs:
           pip install -r requirements.txt
       - name: Create secrets files
       env:
-              YOUTUBE_CLIENT_SECRETS_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
-              YOUTUBE_TOKEN_MILITARY_JSON: ${{ secrets.YOUTUBE_TOKEN_MILITARY_JSON }}
+              CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
+              MILITARY_TOKEN: ${{ secrets.YOUTUBE_TOKEN_MILITARY_JSON }}
         run: |
-          echo "$YOUTUBE_CLIENT_SECRETS_JSON" > client_secrets.json
-          echo "$YOUTUBE_TOKEN_MILITARY_JSON" > token.json
+          echo "$CLIENT_SECRETS" > client_secrets.json
+          echo "$MILITARY_TOKEN" > token.json
       - name: Configure channel
         run: |
           sed -i 's/name: CivilAviationLords/name: Military/g' config.yaml
@@ -110,11 +110,11 @@ jobs:
           pip install -r requirements.txt
       - name: Create secrets files
               env:
-              YOUTUBE_CLIENT_SECRETS_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
-              YOUTUBE_TOKEN_AVIATION_JSON: ${{ secrets.YOUTUBE_TOKEN_AVIATION_JSON }}
+              CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
+              AVIATION_TOKEN: ${{ secrets.YOUTUBE_TOKEN_AVIATION_JSON }}
         run: |
-          echo "$YOUTUBE_CLIENT_SECRETS_JSON" > client_secrets.json
-          echo "$YOUTUBE_TOKEN_AVIATION_JSON" > token.json
+          echo "$CLIENT_SECRETS" > client_secrets.json
+          echo "$AVIATION_TOKEN" > token.json
       - name: Configure channel
         run: |
           sed -i 's/name: Military/name: CivilAviationLords/g' config.yaml
