@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-  steps:
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Set up Python
@@ -47,9 +47,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       - name: Create secrets files
-      env:
-              CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
-              MILITARY_TOKEN: ${{ secrets.YOUTUBE_TOKEN_MILITARY_JSON }}
+        env:
+          CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
+          MILITARY_TOKEN: ${{ secrets.YOUTUBE_TOKEN_MILITARY_JSON }}
         run: |
           echo "$CLIENT_SECRETS" > client_secrets.json
           echo "$MILITARY_TOKEN" > token.json
@@ -57,26 +57,17 @@ jobs:
         run: |
           sed -i 's/name: CivilAviationLords/name: Military/g' config.yaml
       - name: Create .env file
-              env:
-                GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-                PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-                TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-                TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
-                TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
-                TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
-                TIKTOK_OPENID: ${{ secrets.TIKTOK_OPENID }}
         run: |
-        echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
-        echo "PEXELS_API_KEY=$PEXELS_API_KEY" >> .env
-        echo "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" >> .env
-        echo "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" >> .env
-        echo "YOUTUBE_SECRETS_FILE=client_secrets.json" >> .env
-        echo "YOUTUBE_TOKEN_FILE=token.json" >> .env
-        echo "TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY" >> .env
-        echo "TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET" >> .env
-        echo "TIKTOK_ACCESS_TOKEN=$TIKTOK_ACCESS_TOKEN" >> .env
-        echo "TIKTOK_OPENID=$TIKTOK_OPENID" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
+          echo "YOUTUBE_SECRETS_FILE=client_secrets.json" >> .env
+          echo "YOUTUBE_TOKEN_FILE=token.json" >> .env
+          echo "TIKTOK_CLIENT_KEY=${{ secrets.TIKTOK_CLIENT_KEY }}" >> .env
+          echo "TIKTOK_CLIENT_SECRET=${{ secrets.TIKTOK_CLIENT_SECRET }}" >> .env
+          echo "TIKTOK_ACCESS_TOKEN=${{ secrets.TIKTOK_ACCESS_TOKEN }}" >> .env
+          echo "TIKTOK_OPENID=${{ secrets.TIKTOK_OPENID }}" >> .env
       - name: Execute video generation pipeline
         run: |
           python -c "from backend.pipeline import Pipeline; res = Pipeline().run(); import sys; sys.exit(0 if res.get('success') else 1)"
@@ -87,6 +78,7 @@ jobs:
           git add topics_queue_military.txt topics_done.txt video_history.txt music_history.txt
           git commit -m "Update military topics queue and history [skip ci]" || echo "No changes to commit"
           git push
+
   aviation-pipeline:
     if: github.event.schedule == '15 8 * * *' || github.event.schedule == '15 13 * * *' || github.event.schedule == '15 18 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'aviation-pipeline')
     runs-on: ubuntu-latest
@@ -109,9 +101,9 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       - name: Create secrets files
-              env:
-              CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
-              AVIATION_TOKEN: ${{ secrets.YOUTUBE_TOKEN_AVIATION_JSON }}
+        env:
+          CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
+          AVIATION_TOKEN: ${{ secrets.YOUTUBE_TOKEN_AVIATION_JSON }}
         run: |
           echo "$CLIENT_SECRETS" > client_secrets.json
           echo "$AVIATION_TOKEN" > token.json
@@ -119,26 +111,17 @@ jobs:
         run: |
           sed -i 's/name: Military/name: CivilAviationLords/g' config.yaml
       - name: Create .env file
-      env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY_AVIATION }}
-      TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET_AVIATION }}
-      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN_AVIATION }}
-      TIKTOK_OPENID: ${{ secrets.TIKTOK_OPENID_AVIATION }}
         run: |
-          echo "GEMINI_API_KEY=$GEMINI_API_KEY" > .env
-          echo "PEXELS_API_KEY=$PEXELS_API_KEY" >> .env
-          echo "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN" >> .env
-          echo "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID" >> .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
           echo "YOUTUBE_SECRETS_FILE=client_secrets.json" >> .env
           echo "YOUTUBE_TOKEN_FILE=token.json" >> .env
-          echo "TIKTOK_CLIENT_KEY=$TIKTOK_CLIENT_KEY" >> .env
-          echo "TIKTOK_CLIENT_SECRET=$TIKTOK_CLIENT_SECRET" >> .env
-          echo "TIKTOK_ACCESS_TOKEN=$TIKTOK_ACCESS_TOKEN" >> .env
-          echo "TIKTOK_OPENID=$TIKTOK_OPENID" >> .env
+          echo "TIKTOK_CLIENT_KEY=${{ secrets.TIKTOK_CLIENT_KEY_AVIATION }}" >> .env
+          echo "TIKTOK_CLIENT_SECRET=${{ secrets.TIKTOK_CLIENT_SECRET_AVIATION }}" >> .env
+          echo "TIKTOK_ACCESS_TOKEN=${{ secrets.TIKTOK_ACCESS_TOKEN_AVIATION }}" >> .env
+          echo "TIKTOK_OPENID=${{ secrets.TIKTOK_OPENID_AVIATION }}" >> .env
       - name: Execute video generation pipeline
         run: |
           python -c "from backend.pipeline import Pipeline; res = Pipeline().run(); import sys; sys.exit(0 if res.get('success') else 1)"
