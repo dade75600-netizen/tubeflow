@@ -109,13 +109,7 @@ class Pipeline:
         # Initialize publisher early
         publisher = YouTubePublisher()
 
-        # Refresh active YouTube token dynamically before running
-        try:
-            from refresh_tokens import refresh_token_file
-            channel_label = "aviation" if "aviation" in self.profile.get("channel_handle", "").lower() else "military"
-            refresh_token_file(publisher.token_file, channel_label)
-        except Exception as ref_err:
-            print(f"Warning: Automatic token refresh failed during pipeline init: {ref_err}")
+
 
         # Check YouTube authorization if running from queue (automated mode)
         if upload and manual_topic is None and not publisher.is_authorized():
@@ -146,7 +140,7 @@ class Pipeline:
         media_proc      = MediaProcessor(config_path=self.config_path)
         video_edit      = VideoEditor(config_path=self.config_path)
         first_frame_eng = FirstFrameEngineer(config_path=self.config_path)
-        publisher       = YouTubePublisher()
+        # publisher is already initialized at the start of the method
         tiktok_publisher = TikTokPublisher()
         notifier        = Notifier()
 

@@ -1,9 +1,8 @@
 import os
 import json
 import yaml
-from google.auth.transport.requests import Request
+import sys
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
@@ -13,134 +12,44 @@ SCOPES = [
     'https://www.googleapis.com/auth/youtube.force-ssl'
 ]
 
-# OAuth file paths (configured relative to project root)
-SECRETS_FILE = os.getenv('YOUTUBE_SECRETS_FILE', 'client_secrets.json')
-TOKEN_FILE = os.getenv('YOUTUBE_TOKEN_FILE', 'token.json')
-
 class YouTubePublisher:
-    code_verifier = None
-
-    def __init__(self, secrets_file=SECRETS_FILE, token_file=None):
-        self.secrets_file = secrets_file
-        
-        # Dynamically determine the token file based on the active channel name in config.yaml
-        if token_file is None:
-            active_channel = "military"
-            if os.path.exists("config.yaml"):
-                try:
-                    with open("config.yaml", "r", encoding="utf-8") as f:
-                        cfg = yaml.safe_load(f) or {}
-                    name = cfg.get("channel", {}).get("name", "").lower()
-                    if "aviation" in name or "civil" in name or "lords" in name:
-                        active_channel = "aviation"
-                except Exception:
-                    pass
-            
-            if active_channel == "aviation":
-                token_file = "token_aviation.json"
-            else:
-                token_file = "token_military.json"
-                
-            # Fallback to default token.json if specific token file doesn't exist yet
-            if not os.path.exists(token_file) and os.path.exists("token.json"):
-                token_file = "token.json"
-                    
-        self.token_file = token_file
+    def __init__(self):
         self.credentials = None
         self.load_credentials()
 
     def load_credentials(self):
-        """Loads cached OAuth credentials if they exist."""
-        if os.path.exists(self.token_file):
-            try:
-                self.credentials = Credentials.from_authorized_user_file(self.token_file, SCOPES)
-            except Exception as e:
-                print(f"Error loading credentials from {self.token_file}: {e}")
-                self.credentials = None
+        """Loads static OAuth credentials directly from environment variables."""
+        token_json_str = os.getenv('YOUTUBE_TOKEN_JSON')
+        
+        if not token_json_str:
+            print("ERRORE CRITICO: Variabile d'ambiente YOUTUBE_TOKEN_JSON non impostata o vuota.")
+            sys.exit(1)
+            
+        try:
+            token_dict = json.loads(token_json_str)
+            self.credentials = Credentials.from_authorized_user_info(token_dict, SCOPES)
+        except Exception as e:
+            print(f"ERRORE CRITICO: Impossibile fare il parsing del JSON fornito: {e}")
+            sys.exit(1)
+            
+        # Controllo di validità tassativo senza tentativi di refresh dinamici
+        if not self.credentials or not self.credentials.valid:
+            if self.credentials and self.credentials.expired:
+                print("ERRORE CRITICO: Il token nei GitHub Secrets è scaduto o non valido. Aggiornalo manualmente.")
+                sys.exit(1)
+            else:
+                print("ERRORE CRITICO: Il token nei GitHub Secrets è incompleto o non valido. Aggiornalo manualmente.")
+                sys.exit(1)
 
     def is_authorized(self) -> bool:
-        """Returns True if valid credentials exist or can be refreshed."""
-        if not self.credentials:
-            return False
-        if self.credentials.expired:
-            if self.credentials.refresh_token:
-                try:
-                    self.credentials.refresh(Request())
-                    self.save_credentials()
-                    return True
-                except Exception as e:
-                    print(f"Failed to refresh YouTube OAuth credentials: {e}")
-                    return False
-            return False
-        return True
-
-    def save_credentials(self):
-        """Saves current credentials to token_file."""
-        if self.credentials:
-            with open(self.token_file, 'w') as f:
-                f.write(self.credentials.to_json())
-
-    def get_flow(self, redirect_uri: str) -> Flow:
-        """Creates the OAuth2 flow object using the client secrets file."""
-        if not os.path.exists(self.secrets_file):
-            raise FileNotFoundError(
-                f"Google OAuth client_secrets.json was not found at: {os.path.abspath(self.secrets_file)}.\n"
-                "Please download it from Google Cloud Console (Desktop application type) and place it here."
-            )
-        return Flow.from_client_secrets_file(
-            self.secrets_file,
-            scopes=SCOPES,
-            redirect_uri=redirect_uri
-        )
-
-    def get_auth_url(self, redirect_uri: str) -> tuple:
-        """Generates the authorization URL and state."""
-        flow = self.get_flow(redirect_uri)
-        auth_url, state = flow.authorization_url(
-            access_type='offline',
-            include_granted_scopes='true',
-            prompt='consent'
-        )
-        # Store the code_verifier for the callback (memory and disk cache)
-        verifier = getattr(flow, 'code_verifier', None)
-        YouTubePublisher.code_verifier = verifier
-        if verifier:
-            try:
-                with open('.code_verifier', 'w', encoding='utf-8') as f:
-                    f.write(verifier)
-            except Exception as e:
-                print(f"Warning: Could not save .code_verifier to disk: {e}")
-        return auth_url, state
-
-    def fetch_token(self, redirect_uri: str, authorization_response: str):
-        """Exchanges authorization code for credentials and saves it."""
-        flow = self.get_flow(redirect_uri)
-        # Restore the code_verifier from the class-level storage or disk cache
-        verifier = YouTubePublisher.code_verifier
-        if not verifier and os.path.exists('.code_verifier'):
-            try:
-                with open('.code_verifier', 'r', encoding='utf-8') as f:
-                    verifier = f.read().strip()
-            except Exception as e:
-                print(f"Warning: Could not read .code_verifier from disk: {e}")
-
-        if verifier:
-            flow.code_verifier = verifier
-        flow.fetch_token(authorization_response=authorization_response)
-        self.credentials = flow.credentials
-        self.save_credentials()
-
-        # Clean up disk cache after successful exchange
-        if os.path.exists('.code_verifier'):
-            try:
-                os.remove('.code_verifier')
-            except Exception:
-                pass
+        """Returns True if valid credentials exist."""
+        return self.credentials and self.credentials.valid
 
     def get_service(self):
         """Returns the authorized YouTube API service object."""
         if not self.is_authorized():
-            raise Exception("YouTube channel is not authorized. Please complete the OAuth2 login flow.")
+            print("ERRORE CRITICO: Il token nei GitHub Secrets è scaduto o non valido. Aggiornalo manualmente.")
+            sys.exit(1)
         return build('youtube', 'v3', credentials=self.credentials)
 
     def upload_video(self, file_path: str, title: str, description: str, tags: list, privacy_status: str = "public") -> str:
