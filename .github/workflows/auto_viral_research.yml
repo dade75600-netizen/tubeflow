@@ -1,0 +1,111 @@
+name: Auto Viral Research (Weekly Queue Refill)
+
+# ─── TRIGGERS ────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # Every Sunday at 02:00 UTC (03:00 CET / 04:00 CEST)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Channel to research'
+        required: false
+        type: choice
+        options:
+          - all
+          - military
+          - aviation
+        default: 'all'
+      keywords:
+        description: 'Number of seed keywords per channel (1-10)'
+        required: false
+        default: '5'
+      dry_run:
+        description: 'Dry run (print only, no queue write)'
+        required: false
+        type: boolean
+        default: false
+
+# ─── PERMISSIONS ─────────────────────────────────────────────────────────────
+permissions:
+  contents: write   # Required to push updated queue files back to the repo
+
+# ─── JOB ─────────────────────────────────────────────────────────────────────
+jobs:
+  viral-research:
+    name: "Viral Researcher — Queue Refill"
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the full repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Full history needed for a clean push
+
+      # 2. Set up Python runtime
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      # 3. Install all project dependencies
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Run the Viral Researcher
+      #    Dispatched manually: uses the workflow_dispatch inputs.
+      #    Scheduled: runs with safe defaults (all channels, 5 keywords).
+      - name: Run Viral Researcher
+        env:
+          # ── Required secrets ──────────────────────────────────────────────
+          GEMINI_API_KEY:      ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_TOKEN_JSON:  ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          # ── Optional extras (pass them anyway for future-proofing) ───────
+          PEXELS_API_KEY:      ${{ secrets.PEXELS_API_KEY }}
+          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # Resolve inputs: manual dispatch or scheduled defaults
+          CHANNEL="${{ github.event.inputs.channel || 'all' }}"
+          KEYWORDS="${{ github.event.inputs.keywords || '5' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+
+          echo "==================================================="
+          echo "  TubeFlow Viral Researcher — Weekly Queue Refill"
+          echo "  Channel : $CHANNEL"
+          echo "  Keywords: $KEYWORDS per channel"
+          echo "  Dry run : $DRY_RUN"
+          echo "==================================================="
+
+          # Build the command
+          CMD="python -m backend.services.viral_researcher --channel $CHANNEL --keywords $KEYWORDS"
+
+          if [ "$DRY_RUN" = "true" ]; then
+            CMD="$CMD --dry-run"
+          fi
+
+          echo "Running: $CMD"
+          $CMD
+
+      # 5. Commit and push updated queue files back to the repo
+      #    The [skip ci] tag prevents this commit from triggering other workflows.
+      - name: Commit and push updated topic queues
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add topics_queue_military.txt topics_queue_aviation.txt topics_queue.txt
+
+          # Only commit if there are actual changes
+          if git diff --cached --quiet; then
+            echo "No new topics were added to the queues. Nothing to commit."
+          else
+            git commit -m "robot: auto-popolamento topic virali settimanali [skip ci]"
+            git push
+            echo "Queue files updated and pushed successfully!"
+          fi
