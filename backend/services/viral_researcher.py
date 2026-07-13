@@ -24,6 +24,18 @@ import datetime
 import argparse
 from typing import List, Dict, Optional
 
+# Force UTF-8 output on Windows to prevent charmap errors with emojis in titles
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google import genai
@@ -168,7 +180,7 @@ class ViralResearcher:
             return []
 
         published_after = (
-            datetime.datetime.utcnow()
+            datetime.datetime.now(datetime.timezone.utc)
             - datetime.timedelta(days=LOOKBACK_DAYS)
         ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -398,7 +410,7 @@ Return a ViralResearchOutput JSON object."""
 
                 if winners:
                     for w in winners[:3]:
-                        print(f"    ✓ [{w.get('views',0):>9,} views] {w['title']}")
+                        print(f"    [+] [{w.get('views',0):>9,} views] {w['title']}")
                 else:
                     print("  No winners from YouTube — falling back to keyword-only Gemini mode.")
 
