@@ -2,90 +2,107 @@ name: TubeFlow Master Orchestrator
 
 on:
   schedule:
-      - cron: '15 8 * * *'
-          - cron: '15 13 * * *'
-              - cron: '15 18 * * *'
-                  - cron: '0 23 * * 0'
-                    workflow_dispatch:
-                        inputs:
-                              action:
-                                      description: 'Action to trigger manually'
-                                              required: true
-                                                      type: choice
-                                                              options:
-                                                                        - 'aviation-pipeline'
-                                                                                  - 'performance-review'
-                                                                                          default: 'aviation-pipeline'
+    - cron: '15 8 * * *'
+    - cron: '15 13 * * *'
+    - cron: '15 18 * * *'
+    - cron: '0 23 * * 0'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to trigger manually'
+        required: true
+        type: choice
+        options:
+          - 'aviation-pipeline'
+          - 'performance-review'
+        default: 'aviation-pipeline'
 
-                                                                                          jobs:
-                                                                                            aviation-pipeline:
-                                                                                                if: github.event.schedule == '15 8 * * *' || github.event.schedule == '15 13 * * *' || github.event.schedule == '15 18 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'aviation-pipeline')
-                                                                                                    runs-on: ubuntu-latest
-                                                                                                        permissions:
-                                                                                                              contents: write
-                                                                                                                  steps:
-                                                                                                                        - name: Checkout repository
-                                                                                                                                uses: actions/checkout@v4
-                                                                                                                                
-                                                                                                                                      - name: Set up Python
-                                                                                                                                              uses: actions/setup-python@v5
-                                                                                                                                                      with:
-                                                                                                                                                                python-version: '3.10'
-                                                                                                                                                                          cache: 'pip'
-                                                                                                                                                                          
-                                                                                                                                                                                - name: Install dependencies
-                                                                                                                                                                                        run: |
-                                                                                                                                                                                                  pip install --upgrade pip
-                                                                                                                                                                                                            pip install -r requirements.txt
-                                                                                                                                                                                                            
-                                                                                                                                                                                                                  - name: Configure channel
-                                                                                                                                                                                                                          run: |
-                                                                                                                                                                                                                                    sed -i 's/name: Military/name: CivilAviationLords/g' config.yaml
-                                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                          - name: Execute video generation pipeline
-                                                                                                                                                                                                                                                  env:
-                                                                                                                                                                                                                                                            GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-                                                                                                                                                                                                                                                                      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-                                                                                                                                                                                                                                                                                TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                                                                                                                                                                                                                                                                                          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-                                                                                                                                                                                                                                                                                                    YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
-                                                                                                                                                                                                                                                                                                              TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY_AVIATION }}
-                                                                                                                                                                                                                                                                                                                        TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET_AVIATION }}
-                                                                                                                                                                                                                                                                                                                                           TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN_AVIATION }}
-                                                                                                                                                                                                                                                                                                                                                     TIKTOK_OPENID: ${{ secrets.TIKTOK_OPENID_AVIATION }}
-                                                                                                                                                                                                                                                                                                                                                             run: |
-                                                                                                                                                                                                                                                                                                                                                                       python -c "from backend.pipeline import Pipeline; res = Pipeline().run(); import sys; sys.exit(0 if res.get('success') else 1)"
-                                                                                                                                                                                                                                                                                                                                                                       
-                                                                                                                                                                                                                                                                                                                                                                             - name: Commit and push queue updates
-                                                                                                                                                                                                                                                                                                                                                                                     run: |
-                                                                                                                                                                                                                                                                                                                                                                                               git config --global user.name "github-actions[bot]"
-                                                                                                                                                                                                                                                                                                                                                                                                         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-                                                                                                                                                                                                                                                                                                                                                                                                                   git add topics_queue.txt topics_queue_military.txt topics_done.txt video_history.txt music_history.txt
-                                                                                                                                                                                                                                                                                                                                                                                                                             git commit -m "Update aviation topics queue and history [skip ci]" || echo "No changes to commit"
-                                                                                                                                                                                                                                                                                                                                                                                                                                       git push
-                                                                                                                                                                                                                                                                                                                                                                                                                                       
-                                                                                                                                                                                                                                                                                                                                                                                                                                         performance-review:
-                                                                                                                                                                                                                                                                                                                                                                                                                                             if: github.event.schedule == '0 23 * * 0' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'performance-review')
-                                                                                                                                                                                                                                                                                                                                                                                                                                                 runs-on: ubuntu-latest
-                                                                                                                                                                                                                                                                                                                                                                                                                                                     steps:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                           - name: Checkout repository
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                   uses: actions/checkout@v4
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                         - name: Set up Python
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 uses: actions/setup-python@v5
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         with:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   python-version: '3.10'
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             cache: 'pip'
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   - name: Install dependencies
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           run: |
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     pip install --upgrade pip
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               pip install -r requirements.txt
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     - name: Execute performance review script
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             env:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         run: |
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   python bin/performance_review.py
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+jobs:
+  aviation-pipeline:
+    if: github.event.schedule == '15 8 * * *' || github.event.schedule == '15 13 * * *'
+        || github.event.schedule == '15 18 * * *'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'aviation-pipeline')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure channel
+        run: |
+          sed -i 's/name: Military/name: CivilAviationLords/g' config.yaml
+
+      - name: Execute video generation pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY_AVIATION }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET_AVIATION }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN_AVIATION }}
+          TIKTOK_OPENID: ${{ secrets.TIKTOK_OPENID_AVIATION }}
+        run: |
+          python pipeline.py --channel aviation --force-publish
+
+      - name: Commit and push queue updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git restore config.yaml
+          git add topics_queue.txt topics_queue_military.txt topics_queue_aviation.txt topics_done.txt video_history.txt music_history.txt
+          git commit -m "Update aviation topics queue and history [skip ci]" || echo "No changes to commit"
+          git push
+
+  performance-review:
+    if: github.event.schedule == '0 23 * * 0' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'performance-review')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute performance review script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python pipeline.py --analyze
+
+      - name: Commit and push queue updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add topics_queue.txt topics_queue_military.txt topics_queue_aviation.txt topics_done.txt video_history.txt music_history.txt
+          git commit -m "Update military topics queue and history [skip ci]" || echo "No changes to commit"
+          git push
+Agent needs your inputPressing key...Stopping...
+
+Stop Agent
