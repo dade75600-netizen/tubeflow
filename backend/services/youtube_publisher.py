@@ -18,31 +18,34 @@ class YouTubePublisher:
         self.load_credentials()
 
     def load_credentials(self):
-        """Loads static OAuth credentials directly from environment variables."""
-        # Sanificazione estrema: rimuove spazi vuoti, poi apici, poi eventuali altri spazi
-        raw_json = os.getenv("YOUTUBE_TOKEN_JSON", "").strip().strip("'").strip('"').strip()
+        """Loads OAuth credentials from environment variable and auto-refreshes if expired."""
+        token_json_str = os.getenv('YOUTUBE_TOKEN_JSON')
         
-        if not raw_json:
+        if not token_json_str:
             print("ERRORE CRITICO: Variabile d'ambiente YOUTUBE_TOKEN_JSON non impostata o vuota.")
             sys.exit(1)
             
         try:
-            token_dict = json.loads(raw_json)
+            token_dict = json.loads(token_json_str)
             self.credentials = Credentials.from_authorized_user_info(token_dict, SCOPES)
-        except json.JSONDecodeError as e:
-            print(f"ERRORE CRITICO JSON: {raw_json[:30]}")
-            sys.exit(1)
         except Exception as e:
-            print(f"ERRORE CRITICO: Impossibile inizializzare le credenziali: {e}")
+            print(f"ERRORE CRITICO: Impossibile fare il parsing del JSON fornito: {e}")
             sys.exit(1)
-            
-        # Controllo di validità tassativo senza tentativi di refresh dinamici
-        if not self.credentials or not self.credentials.valid:
-            if self.credentials and self.credentials.expired:
-                print("ERRORE CRITICO: Il token nei GitHub Secrets è scaduto o non valido. Aggiornalo manualmente.")
-                sys.exit(1)
+
+        # If token is expired but we have a refresh_token, refresh automatically
+        if not self.credentials.valid:
+            if self.credentials.expired and self.credentials.refresh_token:
+                print("[Auth] Access token scaduto — eseguo il refresh automatico con refresh_token...")
+                try:
+                    from google.auth.transport.requests import Request
+                    self.credentials.refresh(Request())
+                    print("[Auth] Token rinnovato con successo!")
+                except Exception as e:
+                    print(f"ERRORE CRITICO: Refresh del token fallito: {e}")
+                    print("Il refresh_token potrebbe essere stato revocato. Rigenera il token con generate_ultimate_token.py.")
+                    sys.exit(1)
             else:
-                print("ERRORE CRITICO: Il token nei GitHub Secrets è incompleto o non valido. Aggiornalo manualmente.")
+                print("ERRORE CRITICO: Il token e' incompleto o non valido e non ha un refresh_token. Rigenera il token con generate_ultimate_token.py.")
                 sys.exit(1)
 
     def is_authorized(self) -> bool:
@@ -52,7 +55,7 @@ class YouTubePublisher:
     def get_service(self):
         """Returns the authorized YouTube API service object."""
         if not self.is_authorized():
-            print("ERRORE CRITICO: Il token nei GitHub Secrets è scaduto o non valido. Aggiornalo manualmente.")
+            print("ERRORE CRITICO: Il token nei GitHub Secrets e' scaduto o non valido. Aggiornalo manualmente.")
             sys.exit(1)
         return build('youtube', 'v3', credentials=self.credentials)
 
