@@ -369,8 +369,11 @@ def get_channel_name():
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
-    publisher = YouTubePublisher()
-    authorized = publisher.is_authorized()
+    try:
+        publisher = YouTubePublisher()
+        authorized = publisher.is_authorized()
+    except SystemExit:
+        authorized = False
     channel_name = get_channel_name()
 
     # Load queue content

@@ -19,17 +19,21 @@ class YouTubePublisher:
 
     def load_credentials(self):
         """Loads static OAuth credentials directly from environment variables."""
-        token_json_str = os.getenv('YOUTUBE_TOKEN_JSON')
+        # Sanificazione estrema: rimuove spazi vuoti, poi apici, poi eventuali altri spazi
+        raw_json = os.getenv("YOUTUBE_TOKEN_JSON", "").strip().strip("'").strip('"').strip()
         
-        if not token_json_str:
+        if not raw_json:
             print("ERRORE CRITICO: Variabile d'ambiente YOUTUBE_TOKEN_JSON non impostata o vuota.")
             sys.exit(1)
             
         try:
-            token_dict = json.loads(token_json_str)
+            token_dict = json.loads(raw_json)
             self.credentials = Credentials.from_authorized_user_info(token_dict, SCOPES)
+        except json.JSONDecodeError as e:
+            print(f"ERRORE CRITICO JSON: {raw_json[:30]}")
+            sys.exit(1)
         except Exception as e:
-            print(f"ERRORE CRITICO: Impossibile fare il parsing del JSON fornito: {e}")
+            print(f"ERRORE CRITICO: Impossibile inizializzare le credenziali: {e}")
             sys.exit(1)
             
         # Controllo di validità tassativo senza tentativi di refresh dinamici
