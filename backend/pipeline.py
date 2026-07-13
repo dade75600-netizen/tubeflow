@@ -28,6 +28,7 @@ from backend.services.notifier import Notifier
 from backend.services.analytics_engine import AnalyticsEngine
 from backend.services.improvement_agent import ImprovementAgent
 from backend.services.audio_mixer import AudioMixer
+from backend.services.viral_researcher import ViralResearcher
 from backend.channel_config import CHANNEL_CONFIGS
 
 # Load environment variables from .env
@@ -60,6 +61,7 @@ class Pipeline:
         """
         Reads the topics queue file, pops the first non-comment topic,
         rewrites the queue file without it, and returns the topic.
+        If the queue is empty, auto-triggers ViralResearcher to refill it.
         """
         if not os.path.exists(self.queue_file):
             print(f"Queue file {self.queue_file} not found. Creating a blank one.")
@@ -69,6 +71,35 @@ class Pipeline:
 
         with open(self.queue_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
+
+        # Check if queue has any actionable topics
+        has_topics = any(
+            line.strip() and not line.strip().startswith("#")
+            for line in lines
+        )
+
+        if not has_topics:
+            print("[Pipeline] Queue is empty — auto-triggering ViralResearcher to refill...")
+            try:
+                # Determine which channel to refill
+                channel = "aviation" if "aviation" in self.queue_file else "military"
+                researcher = ViralResearcher()
+                researcher.run(channels=[channel], keywords_per_channel=3)
+                # Re-read queue after refill
+                with open(self.queue_file, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                has_topics = any(
+                    line.strip() and not line.strip().startswith("#")
+                    for line in lines
+                )
+                if has_topics:
+                    print("[Pipeline] Queue refilled successfully by ViralResearcher!")
+                else:
+                    print("[Pipeline] ViralResearcher ran but queue is still empty.")
+                    return None
+            except Exception as e:
+                print(f"[Pipeline] ViralResearcher auto-refill failed: {e}")
+                return None
 
         topic = None
         new_lines = []
@@ -372,11 +403,27 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="TubeFlow Content Pipeline")
     parser.add_argument("--analyze", action="store_true", help="Run the performance analysis and feedback loop")
-    parser.add_argument("--channel", type=str, help="Force channel profile (military/aviation)")
+    parser.add_argument("--research", action="store_true", help="Run the ViralResearcher to refill queues with trending topics")
+    parser.add_argument("--dry-run", action="store_true", help="Research only: print topics without writing queue files")
+    parser.add_argument("--keywords", type=int, default=3, help="Keywords per channel for viral research (default: 3)")
+    parser.add_argument("--channel", type=str, help="Force channel profile (military/aviation/all)")
     parser.add_argument("--force-publish", action="store_true", help="Force publish ignoring config")
     
     args = parser.parse_args()
     
+    if args.research:
+        from backend.services.viral_researcher import ViralResearcher
+        channels = ["military", "aviation"]
+        if args.channel and args.channel.lower() in ["military", "aviation"]:
+            channels = [args.channel.lower()]
+        researcher = ViralResearcher()
+        result = researcher.run(
+            channels=channels,
+            dry_run=args.dry_run,
+            keywords_per_channel=args.keywords,
+        )
+        sys.exit(0)
+
     p = Pipeline()
     if args.channel:
         from backend.channel_config import CHANNEL_CONFIGS
