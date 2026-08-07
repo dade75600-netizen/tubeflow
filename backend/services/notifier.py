@@ -60,3 +60,31 @@ class Notifier:
                 print(f"Telegram API error response: {response.text}")
             print(f"Error sending Telegram notification: {e}")
             return False
+
+    def send_alert(self, message: str) -> bool:
+        """Sends a generic alert message to the user's Telegram chat."""
+        if not self.enabled:
+            print("Telegram notification details are not configured. Skipping alert.")
+            return False
+
+        try:
+            print("Sending Telegram alert...")
+            url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+            data = {
+                'chat_id': self.chat_id,
+                'text': message,
+                'parse_mode': 'HTML'
+            }
+            response = requests.post(url, data=data, timeout=15)
+            
+            if response.status_code != 200:
+                print(f"Telegram API response: {response.text}")
+            response.raise_for_status()
+            print("Telegram alert sent successfully!")
+            return True
+            
+        except Exception as e:
+            if 'response' in locals() and hasattr(response, 'text'):
+                print(f"Telegram API error response: {response.text}")
+            print(f"Error sending Telegram alert: {e}")
+            return False

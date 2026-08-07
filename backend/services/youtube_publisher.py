@@ -5,6 +5,7 @@ import sys
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+from backend.services.notifier import Notifier
 
 # Required scopes for YouTube uploads and comment posting
 SCOPES = [
@@ -23,6 +24,7 @@ class YouTubePublisher:
         
         if not token_json_str:
             print("ERRORE CRITICO: Variabile d'ambiente YOUTUBE_TOKEN_JSON non impostata o vuota.")
+            Notifier().send_alert("🚨 <b>ERRORE CRITICO</b>: YOUTUBE_TOKEN_JSON mancante. Pipeline bloccata!")
             sys.exit(1)
             
         try:
@@ -30,6 +32,7 @@ class YouTubePublisher:
             self.credentials = Credentials.from_authorized_user_info(token_dict, SCOPES)
         except Exception as e:
             print(f"ERRORE CRITICO: Impossibile fare il parsing del JSON fornito: {e}")
+            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO</b>: Parsing JSON Token fallito. Controlla il formato! Errore: {e}")
             sys.exit(1)
 
         # If token is expired but we have a refresh_token, refresh automatically
@@ -43,9 +46,11 @@ class YouTubePublisher:
                 except Exception as e:
                     print(f"ERRORE CRITICO: Refresh del token fallito: {e}")
                     print("Il refresh_token potrebbe essere stato revocato. Rigenera il token con generate_ultimate_token.py.")
+                    Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Scaduto.</b> Rinnovare immediatamente con generate_ultimate_token.py!")
                     sys.exit(1)
             else:
                 print("ERRORE CRITICO: Il token e' incompleto o non valido e non ha un refresh_token. Rigenera il token con generate_ultimate_token.py.")
+                Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Invalido/Scaduto senza refresh.</b> Rinnovare immediatamente!")
                 sys.exit(1)
 
     def is_authorized(self) -> bool:
@@ -56,6 +61,7 @@ class YouTubePublisher:
         """Returns the authorized YouTube API service object."""
         if not self.is_authorized():
             print("ERRORE CRITICO: Il token nei GitHub Secrets e' scaduto o non valido. Aggiornalo manualmente.")
+            Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Scaduto.</b> Rinnovare immediatamente!")
             sys.exit(1)
         return build('youtube', 'v3', credentials=self.credentials)
 
