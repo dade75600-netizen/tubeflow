@@ -124,10 +124,15 @@ class YouTubePublisher:
 
         print(f"Starting upload of {file_path} to YouTube...")
         response = None
-        while response is None:
-            status, response = request.next_chunk()
-            if status:
-                print(f"Uploaded {int(status.progress() * 100)}%...")
+        try:
+            while response is None:
+                status, response = request.next_chunk()
+                if status:
+                    print(f"Uploaded {int(status.progress() * 100)}%...")
+        except Exception as e:
+            print(f"ERRORE CRITICO: Upload YouTube fallito: {e}")
+            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO: Upload YouTube Fallito!</b>\nToken probabilmente scaduto (invalid_grant) o quota esaurita. Dettagli: {e}")
+            raise e
 
         video_id = response.get('id')
         print(f"Upload completed successfully! Video ID: {video_id}")
