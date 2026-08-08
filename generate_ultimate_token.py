@@ -35,7 +35,8 @@ def main():
         creds = flow.run_local_server(
             port=8080,
             prompt='consent',
-            access_type='offline'
+            access_type='offline',
+            open_browser=False
         )
         
         # 4. Salvataggio del nuovo token

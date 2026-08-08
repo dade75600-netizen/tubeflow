@@ -190,9 +190,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         filt = (
             f"[{input_idx}:v]"
             f"trim=0:{duration},setpts=PTS-STARTPTS,"
-            # Scale to fill height, maintaining AR
-            f"scale=-2:1920,"
-            # Center crop to 9:16
+            # Scale to fill at least 1080x1920, maintaining AR
+            f"scale=1080:1920:force_original_aspect_ratio=increase,"
+            # Center crop to 1080x1920
             f"crop=1080:1920,"
             # Zoom+pan
             f"zoompan=z='{z_expr}':x='{x_expr}':y='{y_expr}':d={frames}:s=1080x1920:fps={fps},"
