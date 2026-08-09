@@ -13,16 +13,40 @@ class TikTokPublisher:
     def upload_video(self, file_path: str, title: str, description: str, tags: list) -> str:
         """
         Uploads a video to TikTok via Content Posting API.
-        This uses the Direct Post API /v2/post/publish/video/init/
-        Returns the TikTok publish_id on success.
+        Returns the TikTok publish_id on success, None on failure/timeout.
         """
         if not self.is_authorized():
-            print("TikTok API credentials are not set in .env. Skipping TikTok upload.")
+            print("TikTok API credentials are not set. Skipping TikTok upload.")
             return None
             
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Video file not found at: {file_path}")
+            print(f"[TikTok] Video file not found: {file_path} — skipping.")
+            return None
 
+        import threading
+        result_box = [None]
+        error_box = [None]
+
+        def _do_tiktok_upload():
+            try:
+                result_box[0] = self._upload_internal(file_path, title, description, tags)
+            except Exception as e:
+                error_box[0] = e
+
+        t = threading.Thread(target=_do_tiktok_upload, daemon=True)
+        t.start()
+        t.join(timeout=120)  # max 2 minuti
+
+        if t.is_alive():
+            print("[TIMEOUT] Upload TikTok bloccato dopo 2 minuti — saltato.", flush=True)
+            return None
+        if error_box[0]:
+            print(f"[TikTok] Errore di rete TikTok, passo oltre: {error_box[0]}", flush=True)
+            return None
+        return result_box[0]
+
+    def _upload_internal(self, file_path: str, title: str, description: str, tags: list) -> str:
+        """Internal upload logic wrapped by upload_video with timeout."""
         print(f"Starting TikTok upload for {file_path}...")
         
         # Format caption with tags
@@ -41,7 +65,7 @@ class TikTokPublisher:
         }
         init_data = {
             "post_info": {
-                "title": caption[:2200], # TikTok allows up to 2200 chars
+                "title": caption[:2200],
                 "privacy_level": "PUBLIC",
                 "disable_duet": False,
                 "disable_comment": False,
@@ -51,7 +75,7 @@ class TikTokPublisher:
             "source_info": {
                 "source": "FILE_UPLOAD",
                 "video_size": file_size,
-                "chunk_size": file_size, # For files <= 50MB, we can use 1 chunk
+                "chunk_size": file_size,
                 "total_chunk_count": 1
             }
         }

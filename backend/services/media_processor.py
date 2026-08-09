@@ -195,7 +195,7 @@ class MediaProcessor:
             # Download the video file
             print(f"Downloading clip: {best_link} -> {output_path}")
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            video_data = requests.get(best_link, stream=True, timeout=30)
+            video_data = requests.get(best_link, stream=True, timeout=(10, 60))  # (connect, read)
             video_data.raise_for_status()
             
             with open(output_path, 'wb') as out_f:
@@ -214,6 +214,9 @@ class MediaProcessor:
                 
             return True
 
-        except Exception as e:
-            print(f"Error downloading stock video from Pexels: {e}")
+        except requests.exceptions.Timeout:
+            print(f"[TIMEOUT] Download clip bloccato — timeout di rete. Clip saltata.", flush=True)
+            return False
+        except requests.exceptions.RequestException as req_err:
+            print(f"[NETWORK ERROR] Errore di rete Pexels: {req_err}. Clip saltata.", flush=True)
             return False

@@ -52,7 +52,9 @@ class YouTubePublisher:
         return self.credentials and self.credentials.valid
 
     def get_service(self):
-        """Returns the authorized YouTube API service object."""
+        """Returns the authorized YouTube API service object with socket timeout."""
+        import socket
+        socket.setdefaulttimeout(120)  # 2 min timeout su ogni operazione socket
         if not self.is_authorized():
             Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Scaduto.</b> Rinnovare immediatamente!")
             raise Exception("ERRORE CRITICO: Il token nei GitHub Secrets e' scaduto o non valido.")
@@ -117,15 +119,33 @@ class YouTubePublisher:
 
         print(f"Starting upload of {file_path} to YouTube...")
         response = None
-        try:
-            while response is None:
-                status, response = request.next_chunk()
-                if status:
-                    print(f"Uploaded {int(status.progress() * 100)}%...")
-        except Exception as e:
-            print(f"ERRORE CRITICO: Upload YouTube fallito: {e}")
-            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO: Upload YouTube Fallito!</b>\nToken probabilmente scaduto (invalid_grant) o quota esaurita. Dettagli: {e}")
-            raise e
+        import threading
+        upload_error = [None]
+        
+        def do_upload():
+            nonlocal response
+            try:
+                while response is None:
+                    status, response = request.next_chunk()
+                    if status:
+                        print(f"Uploaded {int(status.progress() * 100)}%...", flush=True)
+            except Exception as e:
+                upload_error[0] = e
+
+        upload_thread = threading.Thread(target=do_upload, daemon=True)
+        upload_thread.start()
+        upload_thread.join(timeout=600)  # max 10 minuti
+        
+        if upload_thread.is_alive():
+            print("[TIMEOUT] Upload YouTube bloccato dopo 10 minuti — annullato.", flush=True)
+            Notifier().send_alert("🚨 <b>TIMEOUT: Upload YouTube</b> bloccato dopo 10 minuti. Pipeline continua.")
+            raise Exception("Upload YouTube timeout dopo 10 minuti.")
+        
+        if upload_error[0]:
+            err = upload_error[0]
+            print(f"ERRORE CRITICO: Upload YouTube fallito: {err}")
+            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO: Upload YouTube Fallito!</b>\nDettagli: {err}")
+            raise upload_error[0]
 
         video_id = response.get('id')
         print(f"Upload completed successfully! Video ID: {video_id}")
