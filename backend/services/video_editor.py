@@ -374,16 +374,21 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             output_path
         ])
 
-        print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {n_audio})...")
+        print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {n_audio})...", flush=True)
         try:
-            result = subprocess.run(
+            process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
-                text=True,
-                check=True
+                stdin=subprocess.DEVNULL,
+                text=True
             )
-            print("Video compile successful!")
+            _, stderr_output = process.communicate(timeout=600)  # 10 min max
+            if process.returncode != 0:
+                print(f"FFmpeg compilation failed (code {process.returncode})", flush=True)
+                print(f"FFmpeg stderr:\n{stderr_output[-3000:]}", flush=True)
+                return False
+            print("Video compile successful!", flush=True)
             # Clean up .ass subtitle file
             if os.path.exists(ass_path):
                 try:
@@ -391,7 +396,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 except Exception:
                     pass
             return True
-        except subprocess.CalledProcessError as e:
-            print(f"FFmpeg compilation failed (code {e.returncode})")
-            print(f"FFmpeg stderr:\n{e.stderr[-3000:]}")  # last 3000 chars
+        except subprocess.TimeoutExpired:
+            process.kill()
+            print("FFmpeg timed out after 10 minutes — killed.", flush=True)
+            return False
+        except Exception as e:
+            print(f"FFmpeg unexpected error: {e}", flush=True)
             return False
