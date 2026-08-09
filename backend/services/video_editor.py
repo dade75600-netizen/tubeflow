@@ -355,12 +355,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         n_audio = len(audio_inputs)
         if n_audio == 0:
-            # No audio at all — generate silent audio track
-            print("[WARNING] No audio inputs detected — generating silent audio.", flush=True)
+            # No audio at all — generate silent audio track to avoid FFmpeg hang
+            print("[WARNING] No audio inputs — generating silent audio track.", flush=True)
             fc.append("anullsrc=r=44100:cl=stereo[a_final]")
             cmd.extend(["-f", "lavfi"])
         elif n_audio == 1:
-            fc.append(f"{audio_inputs[0]}anull[a_final]")
+            # Single audio stream: use aformat to properly label it (anull does NOT create usable label)
+            fc.append(f"{audio_inputs[0]}aformat=sample_rates=44100:channel_layouts=stereo[a_final]")
         else:
             fc.append(
                 f"{''.join(audio_inputs)}amix=inputs={n_audio}:"
@@ -384,6 +385,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         ])
 
         print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {n_audio})...", flush=True)
+        print(f"[DEBUG] FFmpeg cmd preview: {' '.join(cmd[:8])} ...", flush=True)
         try:
             process = subprocess.Popen(
                 cmd,
