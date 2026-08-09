@@ -8,6 +8,9 @@ class AudioMixer:
     """
     def __init__(self, base_dir="assets/audio"):
         self.base_dir = base_dir
+        # Ensure required audio directories exist on this runner
+        for subdir in ["military", "aviation", "sfx"]:
+            os.makedirs(os.path.join(base_dir, subdir), exist_ok=True)
 
     def get_bgm_path(self, channel_name: str) -> str:
         """

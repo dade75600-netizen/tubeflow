@@ -311,8 +311,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         fc.append(f"{concat_inputs}concat=n={n_segments}:v=1:a=0[v_concat]")
 
         # Burn subtitles (Alignment=5 = center screen)
-        escaped_ass = ass_path.replace("\\", "/").replace(":", "\\:")
-        fc.append(f"[v_concat]subtitles='{escaped_ass}'[v_final]")
+        if os.path.exists(ass_path):
+            escaped_ass = ass_path.replace("\\", "/").replace(":", "\\:")
+            fc.append(f"[v_concat]subtitles='{escaped_ass}'[v_final]")
+        else:
+            print(f"[WARNING] ASS subtitle file not found: {ass_path} — skipping subtitles.", flush=True)
+            fc.append("[v_concat]copy[v_final]")
 
         # ─── Audio Mixing Engine ─────────────────────────────────────────
         # We ensure that the main voiceover is the FIRST input to amix, 
@@ -350,7 +354,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             audio_inputs.append("[impact_trim]")
 
         n_audio = len(audio_inputs)
-        if n_audio == 1:
+        if n_audio == 0:
+            # No audio at all — generate silent audio track
+            print("[WARNING] No audio inputs detected — generating silent audio.", flush=True)
+            fc.append("anullsrc=r=44100:cl=stereo[a_final]")
+            cmd.extend(["-f", "lavfi"])
+        elif n_audio == 1:
             fc.append(f"{audio_inputs[0]}anull[a_final]")
         else:
             fc.append(
