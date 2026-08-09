@@ -63,7 +63,7 @@ jobs:
         env:
           # ── Required secrets ──────────────────────────────────────────────
           GEMINI_API_KEY:      ${{ secrets.GEMINI_API_KEY }}
-          YOUTUBE_TOKEN_JSON:  ${{ secrets.YOUTUBE_TOKEN_JSON }}
+          YOUTUBE_TOKEN_JSON:  ${{ secrets.YOUTUBE_TOKEN_JSON_MILITARY }}
           # ── Optional extras (pass them anyway for future-proofing) ───────
           PEXELS_API_KEY:      ${{ secrets.PEXELS_API_KEY }}
           TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
