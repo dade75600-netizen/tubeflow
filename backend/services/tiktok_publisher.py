@@ -57,7 +57,7 @@ class TikTokPublisher:
         }
 
         try:
-            init_response = requests.post(init_url, headers=headers, json=init_data)
+            init_response = requests.post(init_url, headers=headers, json=init_data, timeout=30)
             init_response.raise_for_status()
             init_json = init_response.json()
             
@@ -75,7 +75,7 @@ class TikTokPublisher:
                 "Content-Type": "video/mp4",
                 "Content-Range": f"bytes 0-{file_size-1}/{file_size}"
             }
-            upload_response = requests.put(upload_url, headers=upload_headers, data=video_bytes)
+            upload_response = requests.put(upload_url, headers=upload_headers, data=video_bytes, timeout=60)
             upload_response.raise_for_status()
             
             print(f"TikTok upload completed successfully! Publish ID: {publish_id}")

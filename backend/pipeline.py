@@ -177,6 +177,7 @@ class Pipeline:
 
         try:
             # Step 1: Generate Script
+            print("\n>>> [DEBUG] INIZIO FASE: Generazione Script...")
             max_retries = 5
             retry_delay = 15
             script = None
@@ -241,6 +242,7 @@ class Pipeline:
             hook_frame_path = hook_frame_path if hook_ok else None
 
             # Step 4c: Compile Final Video (Audio + Video + Subtitles)
+            print("\n>>> [DEBUG] INIZIO FASE: Render FFmpeg...")
             render_success = video_edit.compile_video(
                 script=script,
                 clips_paths=clips_paths,
@@ -272,6 +274,7 @@ class Pipeline:
             uploaded = False
             
             if upload and publisher.is_authorized():
+                print("\n>>> [DEBUG] INIZIO FASE: Autenticazione YouTube...")
                 print("YouTube channel authorized. Starting upload...")
                 
                 # Format description with affiliate links at the very top (first 3 lines)
@@ -290,6 +293,7 @@ class Pipeline:
                 
                 # Upload video (read privacy status from config, fallback to public)
                 privacy = self.config.get("video", {}).get("privacy_status", "public")
+                print("\n>>> [DEBUG] INIZIO FASE: Upload YouTube...")
                 video_id = publisher.upload_video(
                     file_path=final_video_path,
                     title=script.title,
