@@ -239,7 +239,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         self.generate_ass_subtitles(script, ass_path)
 
         # ── Build input list ──────────────────────────────────────────────
-        cmd = [self.ffmpeg, "-y"]
+        cmd = [self.ffmpeg, "-y", "-nostdin"]
 
         # Optional hook frame image → static video input
         has_hook = first_frame_path and os.path.exists(first_frame_path)

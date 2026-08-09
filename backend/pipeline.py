@@ -224,7 +224,7 @@ class Pipeline:
             # Step 4: Resolve Audio Assets via AudioMixer
             print("[Pipeline] Resolving audio assets (BGM, SFX)...")
             mixer = AudioMixer()
-            channel_name = self.config.get("channel", {}).get("name", "")
+            channel_name = self.profile.get("channel_handle", "")
             bgm_path = mixer.get_bgm_path(channel_name)
             swoosh_path = mixer.get_swoosh_path()
             impact_path = mixer.get_impact_path()
