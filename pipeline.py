@@ -4,20 +4,15 @@ import argparse
 import yaml
 from backend.pipeline import Pipeline
 
-def set_channel_in_config(channel_name):
-    config_path = "config.yaml"
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-        
-        if "channel" not in config:
-            config["channel"] = {}
-        
-        config["channel"]["name"] = channel_name
-        
-        with open(config_path, "w", encoding="utf-8") as f:
-            yaml.safe_dump(config, f)
-        print(f"[Config] Updated active channel in config.yaml to: '{channel_name}'")
+# Forzatura ambiente headless per prevenire hang
+os.environ["HEADLESS"] = "1"
+os.environ["PYTHONUNBUFFERED"] = "1"
+
+# Blocca input interattivi globalmente (ffmpeg, auth, ecc.)
+import builtins
+def _no_input(*args, **kwargs):
+    raise Exception("ERRORE CRITICO: Chiesto input() interattivo in ambiente headless!")
+builtins.input = _no_input
 
 def main():
     parser = argparse.ArgumentParser(description="TubeFlow Content Pipeline Runner")
@@ -27,14 +22,19 @@ def main():
     
     args = parser.parse_args()
     
-    if args.channel:
-        if args.channel == "aviation":
-            set_channel_in_config("CivilAviationLords")
-        else:
-            set_channel_in_config("MilitaryDeepOps")
-            
     # Instantiate and run pipeline
     pipeline = Pipeline()
+    
+    if args.channel:
+        from backend.channel_config import CHANNEL_CONFIGS
+        if args.channel == "aviation":
+            pipeline.profile = CHANNEL_CONFIGS["aviation"]
+            pipeline.queue_file = "topics_queue_aviation.txt"
+            print("[Config] Overridden channel profile to: Aviation")
+        else:
+            pipeline.profile = CHANNEL_CONFIGS["military"]
+            pipeline.queue_file = "topics_queue_military.txt"
+            print("[Config] Overridden channel profile to: Military")
     
     # If force-publish, ensure status is public
     if args.force_publish:

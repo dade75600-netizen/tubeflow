@@ -47,10 +47,6 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Configure channel
-        run: |
-          sed -i 's/name: Military/name: CivilAviationLords/g' config.yaml
-
       - name: Execute video generation pipeline
         env:
           PYTHONUNBUFFERED: "1"
@@ -98,10 +94,6 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Configure channel
-        run: |
-          sed -i 's/name: CivilAviationLords/name: Military/g' config.yaml
 
       - name: Execute video generation pipeline
         env:
