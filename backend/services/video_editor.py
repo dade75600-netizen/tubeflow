@@ -377,30 +377,15 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {n_audio})...", flush=True)
         print(f"[DEBUG] FFmpeg cmd preview: {' '.join(cmd[:8])} ...", flush=True)
         try:
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                stdin=subprocess.DEVNULL,
-                text=True
-            )
-            _, stderr_output = process.communicate(timeout=600)  # 10 min max
-            if process.returncode != 0:
-                print(f"FFmpeg compilation failed (code {process.returncode})", flush=True)
-                print(f"FFmpeg stderr:\n{stderr_output[-3000:]}", flush=True)
-                return False
-            print("Video compile successful!", flush=True)
-            # Clean up .ass subtitle file
-            if os.path.exists(ass_path):
-                try:
-                    os.remove(ass_path)
-                except Exception:
-                    pass
-            return True
-        except subprocess.TimeoutExpired:
-            process.kill()
-            print("FFmpeg timed out after 10 minutes — killed.", flush=True)
-            return False
-        except Exception as e:
-            print(f"FFmpeg unexpected error: {e}", flush=True)
-            return False
+
+          process = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+          )
+        except subprocess.CalledProcessError as e:
+          print(f"[ERROR] FFmpeg failed with exit code {e.returncode}")
+          print(f"[ERROR] FFmpeg stderr:\n{e.stderr}")
+          raise
