@@ -353,20 +353,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             )
             audio_inputs.append("[impact_trim]")
 
-        n_audio = len(audio_inputs)
-        if n_audio == 0:
-            # No audio at all — generate silent audio track to avoid FFmpeg hang
-            print("[WARNING] No audio inputs — generating silent audio track.", flush=True)
-            fc.append("anullsrc=r=44100:cl=stereo[a_final]")
-            cmd.extend(["-f", "lavfi"])
-        elif n_audio == 1:
-            # Single audio stream: use aformat to properly label it (anull does NOT create usable label)
-            fc.append(f"{audio_inputs[0]}aformat=sample_rates=44100:channel_layouts=stereo[a_final]")
+         if len(audio_inputs) == 1:
+           fc.append(f"{audio_inputs[0]}anull[a_final]")
         else:
-            fc.append(
-                f"{''.join(audio_inputs)}amix=inputs={n_audio}:"
-                f"duration=first:dropout_transition=0[a_final]"
-            )
+          fc.append(f"".join(audio_inputs) + f"amix=inputs={len(audio_inputs)}:duration=first:dropout_transition=0[a_final]")
 
         # ── Assemble full command ────────────────────────────────────────
         cmd.extend(["-filter_complex", "; ".join(fc)])
