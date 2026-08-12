@@ -376,15 +376,22 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {len(audio_inputs)})...", flush=True)
         print(f"[DEBUG] FFmpeg cmd preview: {' '.join(cmd[:8])} ...", flush=True)
+        # Comando pulito, senza interazioni e sovrascrittura forzata
+        cmd.insert(1, '-y')
+        if '-nostdin' not in cmd:
+            cmd.insert(2, '-nostdin')
+
+        print(f">>> Esecuzione FFmpeg pulita avviata...")
         try:
-            # Soppressione totale di stdout e stderr per prevenire il buffer deadlock
-            subprocess.run(
+            # Esecuzione standard, catturiamo l'output per i log in caso di errore, 
+            # ma senza intasare i buffer (usiamo capture_output)
+            result = subprocess.run(
                 cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
                 check=True
             )
-            print("Video compile successful!", flush=True)
+            print(">>> Compilazione FFmpeg completata con successo!")
             # Clean up .ass subtitle file
             if os.path.exists(ass_path):
                 try:
@@ -392,6 +399,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 except Exception:
                     pass
             return True
-        except Exception as e:
-            print(f"FFmpeg unexpected error: {e}", flush=True)
-            return False
+        except subprocess.CalledProcessError as e:
+            print(f"!!! ERRORE CRITICO FFMPEG (Codice {e.returncode}) !!!")
+            print(f"STDOUT:\n{e.stdout[-1000:] if e.stdout else 'Nessuno'}")
+            print(f"STDERR:\n{e.stderr[-2000:] if e.stderr else 'Nessuno'}")
+            raise RuntimeError("Pipeline interrotta per errore FFmpeg")
