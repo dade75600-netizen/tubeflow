@@ -353,10 +353,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             )
             audio_inputs.append("[impact_trim]")
 
-         if len(audio_inputs) == 1:
-           fc.append(f"{audio_inputs[0]}anull[a_final]")
+        if len(audio_inputs) == 1:
+            fc.append(f"{audio_inputs[0]}anull[a_final]")
         else:
-          fc.append(f"".join(audio_inputs) + f"amix=inputs={len(audio_inputs)}:duration=first:dropout_transition=0[a_final]")
+            fc.append(f"".join(audio_inputs) + f"amix=inputs={len(audio_inputs)}:duration=first:dropout_transition=0[a_final]")
 
         # ── Assemble full command ────────────────────────────────────────
         cmd.extend(["-filter_complex", "; ".join(fc)])
@@ -367,25 +367,31 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             "-level:v", "4.2",
             "-pix_fmt", "yuv420p",
             "-crf", "22",
-            "-preset", "fast",
+            "-preset", "ultrafast",
             "-c:a", "aac",
             "-b:a", "192k",
             "-shortest",
             output_path
         ])
 
-        print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {n_audio})...", flush=True)
+        print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {len(audio_inputs)})...", flush=True)
         print(f"[DEBUG] FFmpeg cmd preview: {' '.join(cmd[:8])} ...", flush=True)
         try:
-
-          process = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=True
-          )
-        except subprocess.CalledProcessError as e:
-          print(f"[ERROR] FFmpeg failed with exit code {e.returncode}")
-          print(f"[ERROR] FFmpeg stderr:\n{e.stderr}")
-          raise
+            # Soppressione totale di stdout e stderr per prevenire il buffer deadlock
+            subprocess.run(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True
+            )
+            print("Video compile successful!", flush=True)
+            # Clean up .ass subtitle file
+            if os.path.exists(ass_path):
+                try:
+                    os.remove(ass_path)
+                except Exception:
+                    pass
+            return True
+        except Exception as e:
+            print(f"FFmpeg unexpected error: {e}", flush=True)
+            return False
