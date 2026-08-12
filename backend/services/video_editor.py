@@ -388,7 +388,8 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             # ma senza intasare i buffer (usiamo capture_output)
             result = subprocess.run(
                 cmd,
-                capture_output=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 text=True,
                 check=True
             )
