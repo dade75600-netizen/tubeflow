@@ -368,6 +368,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             "-pix_fmt", "yuv420p",
             "-crf", "22",
             "-preset", "ultrafast",
+            "-threads", "2",
             "-c:a", "aac",
             "-b:a", "192k",
             "-shortest",
@@ -375,7 +376,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         ])
 
         print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {len(audio_inputs)})...", flush=True)
-        print(f"[DEBUG] FFmpeg cmd preview: {' '.join(cmd[:8])} ...", flush=True)
+        print(f"[DEBUG] FULL FFmpeg cmd: {' '.join(cmd)}")
         # Comando pulito, senza interazioni e sovrascrittura forzata
         cmd.insert(1, '-y')
         if '-nostdin' not in cmd:
