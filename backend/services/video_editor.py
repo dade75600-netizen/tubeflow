@@ -156,52 +156,16 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         1. Trim to `duration` seconds
         2. Scale to fill 1920px height (no black bars)
         3. Center-crop to 1080x1920 (9:16)
-        4. Dynamic zoom: slow dolly-in from 1.0 to 1.08
-        5. Alternating pan: odd clips pan left→right, even right→left
-        6. Color grade: slight contrast + saturation boost
-        7. Force 30fps, yuv420p
+        4. setsar=1
+        5. Force 30fps, yuv420p
         """
-        pan_direction = clip_idx % 2  # 0 = L→R, 1 = R→L
-
-        # zoompan: z = zoom expression scaling linearly from 1.0 to 1.08
-        # d = total frames at 30fps for this clip
-        # x/y: pan direction based on clip index
-        fps       = 30
-        frames    = max(int(duration * fps), 1)
-        zoom_from = 1.0
-        zoom_to   = 1.08
-
-        # x expression: pan from left-edge to right-edge (or reverse)
-        if pan_direction == 0:
-            # L→R: x goes from 0 to (iw*z - ow)
-            x_expr = "if(eq(on,1),0,x+((iw*zoom-iw)/(2*{f})))".format(f=max(frames, 1))
-        else:
-            # R→L: x goes from (iw*z - ow) to 0
-            x_expr = "if(eq(on,1),(iw*zoom-iw)/2,x-((iw*zoom-iw)/(2*{f})))".format(f=max(frames, 1))
-
-        # y: always centered vertically
-        y_expr = "(ih*zoom-ih)/2"
-
-        # Linear zoom expression from zoom_from to zoom_to
-        z_expr = "{z0}+({z1}-{z0})*on/{f}".format(
-            z0=zoom_from, z1=zoom_to, f=max(frames, 1)
-        )
-
         filt = (
             f"[{input_idx}:v]"
             f"trim=0:{duration},setpts=PTS-STARTPTS,"
-            # Scale to fill at least 1080x1920, maintaining AR
             f"scale=1080:1920:force_original_aspect_ratio=increase,"
-            # Center crop to 1080x1920
             f"crop=1080:1920,"
-            # Zoom+pan
-            f"zoompan=z='{z_expr}':x='{x_expr}':y='{y_expr}':d={frames}:s=1080x1920:fps={fps},"
-            # Color grade
-            f"eq=contrast=1.05:saturation=1.15:brightness=0.01,"
-            # Vignette
-            f"vignette=PI/6,"
-            # Output format
-            f"fps={fps},format=yuv420p"
+            f"setsar=1,"
+            f"fps=30,format=yuv420p"
             f"[v{clip_idx}]"
         )
         return filt
