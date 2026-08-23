@@ -1,0 +1,23 @@
+{
+  "channel_id": "military",
+  "channel_handle": "@MilitaryDeepOps",
+  "niche": "Military Deep Ops / Military Throwback & Tech",
+  "target_audience": "Viewers interested in military history, declassified technology, stealth aircraft and nuclear submarines",
+  "script_tone": "military_micro",
+  "token_env_var": "YOUTUBE_TOKEN_MILITARY",
+  "pexels_queries": [
+    "stealth fighter jet cockpit",
+    "nuclear submarine control room",
+    "cold war bunker launch console",
+    "aircraft carrier landing gear",
+    "b-2 spirit stealth bomber in flight"
+  ],
+  "audio_config": {
+    "background_music_volume": 0.08,
+    "voice_speed": 1.05,
+    "voice_name": "en-US-GuyNeural"
+  },
+  "metadata_defaults": {
+    "tags": ["military", "stealth", "history", "submarines", "aircraft", "technology", "shorts"]
+  }
+}

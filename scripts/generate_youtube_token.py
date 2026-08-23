@@ -9,9 +9,16 @@ SCOPES = [
 ]
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="TubeFlow OAuth Token Generator")
+    parser.add_argument("--env", type=str, default="YOUTUBE_TOKEN_CIVIL_AVIATION", help="Name of the environment variable to save under")
+    args = parser.parse_args()
+    target_env = args.env
+
     print("=" * 70)
     print(" TUBEFLOW OFFLINE YOUTUBE TOKEN GENERATOR ".center(70, "="))
     print("=" * 70)
+    print(f"Target Environment Variable: {target_env}")
 
     secrets_file = os.getenv("YOUTUBE_SECRETS_FILE", "client_secrets.json")
     
@@ -49,7 +56,7 @@ def main():
             "scopes": creds.scopes
         }
         
-        # Salva direttamente nel file .env locale sotto la chiave YOUTUBE_TOKEN_CIVIL_AVIATION
+        # Salva direttamente nel file .env locale sotto la chiave target_env
         import re
         env_file = ".env"
         if os.path.exists(env_file):
@@ -60,9 +67,9 @@ def main():
             
         key_found = False
         new_lines = []
-        pattern = re.compile(r"^YOUTUBE_TOKEN_CIVIL_AVIATION=")
+        pattern = re.compile(r"^" + re.escape(target_env) + r"=")
         escaped_val = json.dumps(token_data).replace("'", "'\\''")
-        new_line = f"YOUTUBE_TOKEN_CIVIL_AVIATION='{escaped_val}'\n"
+        new_line = f"{target_env}='{escaped_val}'\n"
         
         for line in lines:
             if pattern.match(line):
@@ -79,7 +86,7 @@ def main():
         with open(env_file, 'w', encoding='utf-8') as f:
             f.writelines(new_lines)
             
-        print(f"\n[+] SUCCESS: Token generato con successo e salvato in {env_file} sotto la chiave YOUTUBE_TOKEN_CIVIL_AVIATION.")
+        print(f"\n[+] SUCCESS: Token generato con successo e salvato in {env_file} sotto la chiave {target_env}.")
         
         print("\n" + "=" * 70)
         print("\nCOPIA QUESTO TESTO E INCOLLALO NEI GITHUB SECRETS:\n")

@@ -70,7 +70,19 @@ class VideoScript(BaseModel):
         )
     )
     scenes: List[ScriptScene] = Field(
-        description="Ordered list of scenes (10-11 total) composing the Short."
+        description="Ordered list of scenes composing the Short."
+    )
+    on_screen_hook: str = Field(
+        default="",
+        description="Visual hook text shown on screen."
+    )
+    loop_bridge: str = Field(
+        default="",
+        description="Transition phrase looping back to start."
+    )
+    pexels_search_queries: List[str] = Field(
+        default=[],
+        description="List of Pexels search queries."
     )
 
 class StrictScriptSegment(BaseModel):
@@ -209,7 +221,11 @@ Return a StrictVideoScript JSON object containing:
 
         tone = (profile or {}).get("script_tone", "classified_documentary")
 
-        if tone == "classified_documentary":
+        if tone == "military_micro":
+            prompt = self._military_micro_prompt(topic, channel_name)
+            num_scenes = 2
+            target_duration = 9
+        elif tone == "classified_documentary":
             prompt = self._military_prompt(topic, channel_name, num_scenes, target_duration)
         elif tone == "aviation_documentary":
             prompt = self._aviation_prompt(topic, channel_name, num_scenes, target_duration)
@@ -218,7 +234,7 @@ Return a StrictVideoScript JSON object containing:
 
         print(
             f"Generating Shorts script for: '{topic}' "
-            f"(Target: {target_duration}s, {num_scenes} scenes, max 140 words)..."
+            f"(Target: {target_duration}s, {num_scenes} scenes)..."
         )
 
         response = self.client.models.generate_content(
@@ -240,6 +256,36 @@ Return a StrictVideoScript JSON object containing:
             raise e
 
     # ─── Prompt builders ─────────────────────────────────────────────────────
+
+    def _military_micro_prompt(self, topic: str, channel_name: str) -> str:
+        return f"""You are the lead scriptwriter for '{channel_name}', a viral micro-documentary channel.
+Write a loop-able, highly educational, anti-reused content YouTube Short script about classified military technology or historical secrets.
+
+TOPIC: "{topic}"
+
+YOUR MISSION: Write a micro-documentary script (8-10 seconds total) designed for high retention loops.
+
+═══════════ ABSOLUTE HARD RULES ═══════════
+1. TOTAL NARRATION: Must be exactly 20-25 words total across the entire video.
+2. SEAMLESS LOOP: The last sentence must cut off mid-thought and flow perfectly back to the first word of the video.
+3. SCENES: Generate exactly 2 scenes:
+   - Scene 1 (Duration: 4.5s): Hook / shocking fact.
+   - Scene 2 (Duration: 4.5s): Explanation ending in loop_bridge.
+4. FOCUS AREAS: Focus on nuclear submarines, stealth aircraft (SR-71 Blackbird, B-2 Spirit, F-22 Raptor), declassified Cold War files, or naval/air military records.
+
+═══════════ JSON OUTPUT FORMAT ═══════════
+Return a VideoScript JSON object conforming to this schema:
+- title: click-worthy title under 60 characters with 1 emoji, NO hashtags.
+- description: SEO-optimized description starting with #Shorts.
+- tags: list of tags starting with 'Shorts', 'YouTubeShorts'.
+- on_screen_hook: the shocking visual hook text to display on screen (3-5 words).
+- loop_bridge: the final phrase connecting back to the start.
+- voiceover_text: the combined narration text of Scene 1 + Scene 2.
+- pexels_search_queries: list of exactly 2 military search queries in English.
+- scenes: exactly 2 scenes:
+  * Scene 1: scene_number=1, narration=Scene 1 hook text, duration=4.5, search_query=pexels_search_queries[0]
+  * Scene 2: scene_number=2, narration=Scene 2 text ending in loop_bridge, duration=4.5, search_query=pexels_search_queries[1]
+"""
 
     def _military_prompt(self, topic: str, channel_name: str,
                          num_scenes: int, target_duration: int) -> str:
