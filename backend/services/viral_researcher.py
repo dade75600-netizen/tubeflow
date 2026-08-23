@@ -77,12 +77,21 @@ CHANNEL_KEYWORDS: Dict[str, List[str]] = {
         "flight attendant secrets",
         "aviation disaster investigation",
     ],
+    "wealth_engine": [
+        "luxury lifestyle dark",
+        "wall street trading",
+        "gold bullion vault",
+        "modern skyscraper office",
+        "counting money cinematic",
+        "supercar night drive"
+    ]
 }
 
 # Queue file paths per channel
 QUEUE_FILES: Dict[str, str] = {
     "military": "topics_queue_military.txt",
     "aviation": "topics_queue_aviation.txt",
+    "wealth_engine": "topics_queue_wealth_engine.txt"
 }
 
 # Engagement thresholds — discard below these
@@ -129,24 +138,10 @@ class ViralResearchOutput(BaseModel):
     )
 
 
-# ─── Helper: load credentials from environment ────────────────────────────────
-def _load_yt_credentials() -> Optional[Credentials]:
-    token_str = os.getenv("YOUTUBE_TOKEN_JSON")
-    if not token_str:
-        print("[ViralResearcher] YOUTUBE_TOKEN_JSON not set. Skipping YouTube API calls.")
-        return None
-    try:
-        token_dict = json.loads(token_str)
-        creds = Credentials.from_authorized_user_info(token_dict, SCOPES)
-        return creds
-    except Exception as e:
-        print(f"[ViralResearcher] Could not parse YOUTUBE_TOKEN_JSON: {e}")
-        return None
-
-
 # ─── Core class ──────────────────────────────────────────────────────────────
 class ViralResearcher:
-    def __init__(self):
+    def __init__(self, token_env_var: str = "YOUTUBE_TOKEN_JSON"):
+        self.token_env_var = token_env_var
         self.gemini_client = None
         self.yt_service = None
 
@@ -161,14 +156,54 @@ class ViralResearcher:
             )
 
         # Init YouTube Data API (read-only, uses OAuth token)
-        creds = _load_yt_credentials()
+        creds = self._load_yt_credentials()
         if creds:
             self.yt_service = build("youtube", "v3", credentials=creds)
         else:
             print(
-                "[ViralResearcher] WARNING: No YouTube credentials — "
+                f"[ViralResearcher] WARNING: No YouTube credentials from {self.token_env_var} — "
                 "will skip trend data and use keyword-only Gemini research."
             )
+
+    def _load_yt_credentials(self) -> Optional[Credentials]:
+        token_str = os.getenv(self.token_env_var)
+        if not token_str and self.token_env_var != "YOUTUBE_TOKEN_JSON":
+            token_str = os.getenv("YOUTUBE_TOKEN_JSON")
+            if token_str:
+                print(f"[ViralResearcher] {self.token_env_var} not found. Falling back to YOUTUBE_TOKEN_JSON.")
+                
+        if not token_str:
+            print(f"[ViralResearcher] {self.token_env_var} not set. Skipping YouTube API calls.")
+            return None
+        try:
+            token_dict = json.loads(token_str)
+            token = token_dict.get('token')
+            refresh_token = token_dict.get('refresh_token')
+            token_uri = token_dict.get('token_uri')
+            client_id = token_dict.get('client_id')
+            client_secret = token_dict.get('client_secret')
+            scopes = token_dict.get('scopes')
+
+            creds = Credentials(
+                token=token,
+                refresh_token=refresh_token,
+                token_uri=token_uri,
+                client_id=client_id,
+                client_secret=client_secret,
+                scopes=scopes
+            )
+            
+            # Silent refresh if expired
+            if not creds.valid:
+                if creds.expired and creds.refresh_token:
+                    print(f"[ViralResearcher] Silent token refresh for {self.token_env_var}...")
+                    from google.auth.transport.requests import Request
+                    creds.refresh(Request())
+                    print("[ViralResearcher] Silent token refresh completed successfully.")
+            return creds
+        except Exception as e:
+            print(f"[ViralResearcher] Could not load credentials from {self.token_env_var}: {e}")
+            return None
 
     # ─── Step 1: Search YouTube for high-performing recent videos ────────────
     def _search_videos(self, keyword: str) -> List[Dict]:
@@ -277,14 +312,14 @@ class ViralResearcher:
         Works even with an empty winning_videos list (falls back to
         keyword-only mode).
         """
-        niche_desc = (
-            "classified military history, secret operations, cold war secrets, fighter jets, "
-            "black ops"
-            if channel == "military"
-            else
-            "commercial aviation emergencies, pilot secrets, air crash investigations, "
-            "airline industry hidden facts"
-        )
+        if channel == "military":
+            niche_desc = "classified military history, secret operations, cold war secrets, fighter jets, black ops"
+        elif channel == "aviation":
+            niche_desc = "commercial aviation emergencies, pilot secrets, air crash investigations, airline industry hidden facts"
+        elif channel == "wealth_engine":
+            niche_desc = "personal finance, wealth psychology, luxury lifestyle, high-ticket finance, money secrets"
+        else:
+            niche_desc = channel
 
         if winning_videos:
             video_block = "\n".join(
@@ -462,7 +497,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    channels = ["military", "aviation"] if args.channel == "all" else [args.channel]
+    channels = ["military", "aviation", "wealth_engine"] if args.channel == "all" else [args.channel]
 
     researcher = ViralResearcher()
     researcher.run(

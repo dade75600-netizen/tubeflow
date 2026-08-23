@@ -29,6 +29,7 @@ def main():
     dirs = [
         os.path.join(base_dir, "military"),
         os.path.join(base_dir, "aviation"),
+        os.path.join(base_dir, "wealth_engine"),
         os.path.join(base_dir, "sfx")
     ]
     
@@ -38,6 +39,7 @@ def main():
     # Generate placeholder background music
     generate_silence_mp3(os.path.join(base_dir, "military", "placeholder_bgm.mp3"), 10.0)
     generate_silence_mp3(os.path.join(base_dir, "aviation", "placeholder_bgm.mp3"), 10.0)
+    generate_silence_mp3(os.path.join(base_dir, "wealth_engine", "placeholder_bgm.mp3"), 10.0)
     
     # Generate placeholder SFX
     generate_silence_mp3(os.path.join(base_dir, "sfx", "swoosh.mp3"), 1.0)

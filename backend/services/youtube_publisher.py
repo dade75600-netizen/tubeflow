@@ -14,51 +14,99 @@ SCOPES = [
 ]
 
 class YouTubePublisher:
-    def __init__(self):
+    def __init__(self, token_env_var: str = None):
+        if not token_env_var:
+            if os.getenv("YOUTUBE_TOKEN_CIVIL_AVIATION"):
+                token_env_var = "YOUTUBE_TOKEN_CIVIL_AVIATION"
+            elif os.getenv("YOUTUBE_TOKEN_MILITARY"):
+                token_env_var = "YOUTUBE_TOKEN_MILITARY"
+            else:
+                token_env_var = "YOUTUBE_TOKEN_JSON"
+        self.token_env_var = token_env_var
         self.credentials = None
+        self.client = None
         self.load_credentials()
 
     def load_credentials(self):
-        """Loads OAuth credentials from environment variable and auto-refreshes if expired."""
-        token_json_str = os.getenv('YOUTUBE_TOKEN_JSON')
+        """Loads OAuth credentials from the designated environment variable and auto-refreshes if expired."""
+        token_json_str = os.getenv(self.token_env_var)
+        if not token_json_str and self.token_env_var != "YOUTUBE_TOKEN_JSON":
+            token_json_str = os.getenv("YOUTUBE_TOKEN_JSON")
+            if token_json_str:
+                print(f"[YouTubePublisher] {self.token_env_var} not found. Falling back to YOUTUBE_TOKEN_JSON.")
         
         if not token_json_str:
-            raise Exception("ERRORE CRITICO: Variabile d'ambiente YOUTUBE_TOKEN_JSON non impostata o vuota.")
+            print(f"[YouTubePublisher] WARNING: {self.token_env_var} environment variable is not set. Channel uploads will be disabled.")
+            self.credentials = None
+            return
             
         try:
             token_dict = json.loads(token_json_str)
-            self.credentials = Credentials.from_authorized_user_info(token_dict, SCOPES)
         except Exception as e:
-            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO</b>: Parsing JSON Token fallito. Controlla il formato! Errore: {e}")
-            raise Exception(f"ERRORE CRITICO: Impossibile fare il parsing del JSON fornito: {e}")
+            print(f"[YouTubePublisher] ERROR: Parsing JSON Token from {self.token_env_var} failed: {e}")
+            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO</b>: Parsing JSON Token da {self.token_env_var} fallito. Controlla il formato! Errore: {e}")
+            self.credentials = None
+            return
+
+        try:
+            token = token_dict.get('token')
+            refresh_token = token_dict.get('refresh_token')
+            token_uri = token_dict.get('token_uri')
+            client_id = token_dict.get('client_id')
+            client_secret = token_dict.get('client_secret')
+            scopes = token_dict.get('scopes')
+
+            self.credentials = Credentials(
+                token=token,
+                refresh_token=refresh_token,
+                token_uri=token_uri,
+                client_id=client_id,
+                client_secret=client_secret,
+                scopes=scopes
+            )
+        except Exception as e:
+            print(f"[YouTubePublisher] ERROR: Instantiating Credentials failed: {e}")
+            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO</b>: Creazione credentials fallito. Errore: {e}")
+            self.credentials = None
+            return
 
         # If token is expired but we have a refresh_token, refresh automatically
         if not self.credentials.valid:
             if self.credentials.expired and self.credentials.refresh_token:
-                print("[Auth] Access token scaduto — eseguo il refresh automatico con refresh_token...")
+                print(f"[YouTubePublisher] Silent token refresh for {self.token_env_var}...")
                 try:
                     from google.auth.transport.requests import Request
                     self.credentials.refresh(Request())
-                    print("[Auth] Token rinnovato con successo!")
+                    print("[YouTubePublisher] Silent token refresh completed successfully.")
                 except Exception as e:
-                    Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Scaduto.</b> Rinnovare immediatamente con generate_ultimate_token.py!")
-                    raise Exception(f"ERRORE CRITICO: Refresh del token fallito: {e}")
+                    print(f"[YouTubePublisher] ERROR: Silent token refresh failed: {e}")
+                    Notifier().send_alert(f"🚨 <b>ERRORE CRITICO: Token YouTube Scaduto/Revocato.</b> Refresh fallito per {self.token_env_var}: {e}")
+                    self.credentials = None
             else:
-                Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Invalido/Scaduto senza refresh.</b> Rinnovare immediatamente!")
-                raise Exception("ERRORE CRITICO: Il token e' incompleto o non valido e non ha un refresh_token.")
+                print(f"[YouTubePublisher] ERROR: Token for {self.token_env_var} is invalid/expired without a refresh token.")
+                Notifier().send_alert(f"🚨 <b>ERRORE CRITICO: Token YouTube Invalido/Scaduto senza refresh per {self.token_env_var}.</b>")
+                self.credentials = None
+
+        if self.is_authorized():
+            try:
+                import socket
+                socket.setdefaulttimeout(120)  # 2 min timeout on each socket operation
+                self.client = build('youtube', 'v3', credentials=self.credentials)
+            except Exception as e:
+                print(f"[YouTubePublisher] ERROR: Building YouTube client failed: {e}")
+                self.credentials = None
+                self.client = None
 
     def is_authorized(self) -> bool:
         """Returns True if valid credentials exist."""
-        return self.credentials and self.credentials.valid
+        return self.credentials is not None and self.credentials.valid
 
     def get_service(self):
-        """Returns the authorized YouTube API service object with socket timeout."""
-        import socket
-        socket.setdefaulttimeout(120)  # 2 min timeout su ogni operazione socket
-        if not self.is_authorized():
-            Notifier().send_alert("🚨 <b>ERRORE CRITICO: Token YouTube Scaduto.</b> Rinnovare immediatamente!")
-            raise Exception("ERRORE CRITICO: Il token nei GitHub Secrets e' scaduto o non valido.")
-        return build('youtube', 'v3', credentials=self.credentials)
+        """Returns the authorized YouTube API service object."""
+        if not self.is_authorized() or self.client is None:
+            Notifier().send_alert(f"🚨 <b>ERRORE CRITICO: Client YouTube non autorizzato o mancante.</b> Rinnovare il token per {self.token_env_var}!")
+            raise Exception(f"ERRORE CRITICO: Il token in {self.token_env_var} e' scaduto, non valido o revocato.")
+        return self.client
 
     def upload_video(self, file_path: str, title: str, description: str, tags: list, privacy_status: str = "public") -> str:
         """
@@ -184,3 +232,5 @@ class YouTubePublisher:
             print(f"Failed to post YouTube comment: {e}")
             print("Verify that the YouTube channel is authorized with the correct scopes (force-ssl).")
             return None
+
+

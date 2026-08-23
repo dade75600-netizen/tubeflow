@@ -35,20 +35,50 @@ from backend.channel_config import CHANNEL_CONFIGS
 load_dotenv()
 
 class Pipeline:
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = "config.yaml", channel_config_path: str = None):
         self.config_path = config_path
         self.config = self.load_config()
 
-        # Resolve active channel profile from configuration channel name
-        channel_name = self.config.get("channel", {}).get("name", "").lower()
-        if "aviation" in channel_name or "civil" in channel_name or "lords" in channel_name:
-            self.profile = CHANNEL_CONFIGS["aviation"]
-            self.queue_file = "topics_queue_aviation.txt"
+        if channel_config_path:
+            import json
+            print(f"[Pipeline] Loading dynamic channel config from: {channel_config_path}")
+            with open(channel_config_path, "r", encoding="utf-8") as f:
+                channel_data = json.load(f)
+            
+            self.profile = channel_data
+            channel_id = channel_data.get("channel_id", "wealth_engine")
+            self.queue_file = f"topics_queue_{channel_id}.txt"
+            
+            # Dynamically override global settings based on channel config
+            if "audio_config" in channel_data:
+                self.config["music"] = self.config.get("music", {})
+                self.config["music"]["background_volume"] = channel_data["audio_config"].get("background_music_volume", 0.08)
+                
+                self.config["voice"] = self.config.get("voice", {})
+                if "voice_name" in channel_data["audio_config"]:
+                    self.config["voice"]["name"] = channel_data["audio_config"]["voice_name"]
+                
+                # Convert multiplier speed to rate percentage
+                voice_speed = channel_data["audio_config"].get("voice_speed", 1.05)
+                pct = int(round((float(voice_speed) - 1.0) * 100))
+                self.config["voice"]["rate"] = f"{pct:+d}%"
+                
+            if "metadata_defaults" in channel_data:
+                self.config["video"] = self.config.get("video", {})
+                self.config["video"]["tags"] = channel_data["metadata_defaults"].get("tags", [])
         else:
-            self.profile = CHANNEL_CONFIGS["military"]
-            self.queue_file = "topics_queue_military.txt"
-        print(f"[Pipeline] Resolved active channel profile: {self.profile.get('channel_handle')}")
+            # Resolve active channel profile from configuration channel name
+            channel_name = self.config.get("channel", {}).get("name", "").lower()
+            if "aviation" in channel_name or "civil" in channel_name or "lords" in channel_name:
+                self.profile = CHANNEL_CONFIGS["aviation"]
+                self.queue_file = "topics_queue_aviation.txt"
+            else:
+                self.profile = CHANNEL_CONFIGS["military"]
+                self.queue_file = "topics_queue_military.txt"
+                
+        print(f"[Pipeline] Resolved active channel profile: {self.profile.get('channel_handle') or self.profile.get('channel_id')}")
         print(f"[Pipeline] Using queue file: {self.queue_file}")
+        self._token_env_var = None
 
     def load_config(self) -> dict:
         """Loads configuration from yaml."""
@@ -56,6 +86,30 @@ class Pipeline:
             with open(self.config_path, 'r') as f:
                 return yaml.safe_load(f)
         return {}
+
+    @property
+    def token_env_var(self) -> str:
+        # Check if set manually
+        if hasattr(self, '_token_env_var') and self._token_env_var:
+            return self._token_env_var
+        
+        # Check profile
+        if hasattr(self, 'profile') and isinstance(self.profile, dict):
+            # Check if token_env_var is defined in profile
+            if "token_env_var" in self.profile:
+                return self.profile["token_env_var"]
+            # Deduce from channel_handle or channel_id
+            channel_id = self.profile.get("channel_id")
+            if not channel_id and "channel_handle" in self.profile:
+                handle = self.profile["channel_handle"].lstrip("@").lower()
+                if "aviation" in handle:
+                    return "YOUTUBE_TOKEN_CIVIL_AVIATION"
+                elif "military" in handle:
+                    return "YOUTUBE_TOKEN_MILITARY"
+                channel_id = handle
+            if channel_id:
+                return f"YOUTUBE_TOKEN_{channel_id.upper().replace('-', '_')}"
+        return "YOUTUBE_TOKEN_JSON"
 
     def get_next_topic(self) -> str:
         """
@@ -82,8 +136,13 @@ class Pipeline:
             print("[Pipeline] Queue is empty — auto-triggering ViralResearcher to refill...")
             try:
                 # Determine which channel to refill
-                channel = "aviation" if "aviation" in self.queue_file else "military"
-                researcher = ViralResearcher()
+                if "aviation" in self.queue_file:
+                    channel = "aviation"
+                elif "wealth" in self.queue_file:
+                    channel = "wealth_engine"
+                else:
+                    channel = "military"
+                researcher = ViralResearcher(token_env_var=self.token_env_var)
                 researcher.run(channels=[channel], keywords_per_channel=3)
                 # Re-read queue after refill
                 with open(self.queue_file, 'r', encoding='utf-8') as f:
@@ -138,7 +197,7 @@ class Pipeline:
         print("="*50)
 
         # Initialize publisher early
-        publisher = YouTubePublisher()
+        publisher = YouTubePublisher(token_env_var=self.token_env_var)
 
 
 
@@ -199,7 +258,7 @@ class Pipeline:
 
             # Step 2: Generate Voiceover Audio
             voiceover_path = os.path.join(temp_dir, "voiceover.mp3")
-            media_proc.generate_voiceover_sync(script.voiceover_text, voiceover_path)
+            media_proc.generate_voiceover_sync(script.voiceover_text, voiceover_path, profile=self.profile)
 
             # Step 3: Fetch Stock Video Clips
             clips_paths = []
@@ -224,7 +283,7 @@ class Pipeline:
             # Step 4: Resolve Audio Assets via AudioMixer
             print("[Pipeline] Resolving audio assets (BGM, SFX)...")
             mixer = AudioMixer()
-            channel_name = self.profile.get("channel_handle", "")
+            channel_name = self.profile.get("channel_handle") or self.profile.get("channel_id") or ""
             bgm_path = mixer.get_bgm_path(channel_name)
             swoosh_path = mixer.get_swoosh_path()
             impact_path = mixer.get_impact_path()
@@ -273,52 +332,55 @@ class Pipeline:
             video_id = None
             uploaded = False
             
-            if upload and publisher.is_authorized():
-                print("\n>>> [DEBUG] INIZIO FASE: Autenticazione YouTube...", flush=True)
-                print("YouTube channel authorized. Starting upload...")
-                
-                # Format description with affiliate links at the very top (first 3 lines)
-                affiliate_links = self.config.get("affiliate", {}).get("links", [])
-                affiliate_desc = ""
-                if affiliate_links:
-                    affiliate_desc = "🔥 Special Offers & Gear:\n"
-                    for item in affiliate_links:
-                        label = item.get("label", "Check out")
-                        url = item.get("url", "")
-                        affiliate_desc += f"👉 {label}: {url}\n"
-                    affiliate_desc += "\n"
-                
-                description = affiliate_desc + script.description
-                tags = script.tags
-                
-                # Upload video (read privacy status from config, fallback to public)
-                privacy = self.config.get("video", {}).get("privacy_status", "public")
-                print("\n>>> [DEBUG] INIZIO FASE: Upload YouTube...", flush=True)
-                video_id = publisher.upload_video(
-                    file_path=final_video_path,
-                    title=script.title,
-                    description=description,
-                    tags=tags,
-                    privacy_status=privacy
-                )
-                uploaded = bool(video_id)
-                print(f"Video uploaded to YouTube. Video ID: {video_id}")
-                
-                # Post affiliate links as the first comment
-                if video_id and affiliate_links:
-                    affiliate_comment = "🔥 Get the ultimate military gear and models here:\n"
-                    for item in affiliate_links:
-                        label = item.get("label", "Click here")
-                        url = item.get("url", "")
-                        affiliate_comment += f"👉 {label}: {url}\n"
+            if upload:
+                if publisher.is_authorized():
+                    print("\n>>> [DEBUG] INIZIO FASE: Autenticazione YouTube...", flush=True)
+                    print("YouTube channel authorized. Starting upload...")
                     
-                    try:
-                        print("Posting affiliate links comment...")
-                        publisher.post_comment(video_id, affiliate_comment)
-                    except Exception as c_err:
-                        print(f"Could not post affiliate comment: {c_err}")
+                    # Format description with affiliate links at the very top (first 3 lines)
+                    affiliate_links = self.config.get("affiliate", {}).get("links", [])
+                    affiliate_desc = ""
+                    if affiliate_links:
+                        affiliate_desc = "🔥 Special Offers & Gear:\n"
+                        for item in affiliate_links:
+                            label = item.get("label", "Check out")
+                            url = item.get("url", "")
+                            affiliate_desc += f"👉 {label}: {url}\n"
+                        affiliate_desc += "\n"
+                    
+                    description = affiliate_desc + script.description
+                    tags = script.tags
+                    
+                    # Upload video (read privacy status from config, fallback to public)
+                    privacy = self.config.get("video", {}).get("privacy_status", "public")
+                    print("\n>>> [DEBUG] INIZIO FASE: Upload YouTube...", flush=True)
+                    video_id = publisher.upload_video(
+                        file_path=final_video_path,
+                        title=script.title,
+                        description=description,
+                        tags=tags,
+                        privacy_status=privacy
+                    )
+                    uploaded = bool(video_id)
+                    print(f"Video uploaded to YouTube. Video ID: {video_id}")
+                    
+                    # Post affiliate links as the first comment
+                    if video_id and affiliate_links:
+                        affiliate_comment = "🔥 Get the ultimate military gear and models here:\n"
+                        for item in affiliate_links:
+                            label = item.get("label", "Click here")
+                            url = item.get("url", "")
+                            affiliate_comment += f"👉 {label}: {url}\n"
+                        
+                        try:
+                            print("Posting affiliate links comment...")
+                            publisher.post_comment(video_id, affiliate_comment)
+                        except Exception as c_err:
+                            print(f"Could not post affiliate comment: {c_err}")
+                else:
+                    print("YouTube channel is NOT authorized. Video saved locally in outputs/ folder. Upload skipped.")
             else:
-                print("YouTube channel is NOT authorized. Video saved locally in outputs/ folder. Upload skipped.")
+                print("Upload is disabled (upload=False). Video saved locally in outputs/ folder.")
 
             # Step 6.1: Publish to TikTok
             if upload and self.config.get("tiktok", {}).get("enabled", True):
@@ -379,7 +441,7 @@ class Pipeline:
         print("="*50)
         
         try:
-            analytics = AnalyticsEngine()
+            analytics = AnalyticsEngine(token_env_var=self.token_env_var)
             print("Fetching recent video metrics from YouTube...")
             dataset = analytics.fetch_recent_metrics(max_results=20)
             
@@ -420,7 +482,12 @@ if __name__ == "__main__":
         channels = ["military", "aviation"]
         if args.channel and args.channel.lower() in ["military", "aviation"]:
             channels = [args.channel.lower()]
-        researcher = ViralResearcher()
+        token_env_var = "YOUTUBE_TOKEN_JSON"
+        if args.channel and args.channel.lower() == "aviation":
+            token_env_var = "YOUTUBE_TOKEN_CIVIL_AVIATION"
+        elif args.channel and args.channel.lower() == "military":
+            token_env_var = "YOUTUBE_TOKEN_MILITARY"
+        researcher = ViralResearcher(token_env_var=token_env_var)
         result = researcher.run(
             channels=channels,
             dry_run=args.dry_run,

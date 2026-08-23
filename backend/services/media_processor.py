@@ -19,16 +19,41 @@ class MediaProcessor:
                 return yaml.safe_load(f)
         return {}
 
-    def generate_voiceover_sync(self, text: str, output_path: str):
+    def generate_voiceover_sync(self, text: str, output_path: str, profile: dict = None):
         """Synchronous wrapper for generating voiceover."""
-        asyncio.run(self.generate_voiceover(text, output_path))
+        asyncio.run(self.generate_voiceover(text, output_path, profile))
 
-    async def generate_voiceover(self, text: str, output_path: str):
+    async def generate_voiceover(self, text: str, output_path: str, profile: dict = None):
         """Generates voiceover using edge-tts neural voices."""
         voice_cfg = self.config.get("voice", {})
-        voice_name = voice_cfg.get("name", "en-US-GuyNeural")
-        rate = voice_cfg.get("rate", "+5%")
-        pitch = voice_cfg.get("pitch", "+0Hz")
+        
+        voice_name = "en-US-GuyNeural"
+        rate = "+5%"
+        pitch = "+0Hz"
+        
+        if profile:
+            audio_cfg = profile.get("audio_config", {})
+            voice_cfg_profile = profile.get("voice_config", {}) or {}
+            
+            # Map values from profile
+            voice_name = audio_cfg.get("voice_name") or voice_cfg_profile.get("name") or voice_cfg.get("name") or "en-US-ChristopherNeural"
+            
+            voice_speed = audio_cfg.get("voice_speed") or voice_cfg_profile.get("voice_speed")
+            if voice_speed is not None:
+                try:
+                    # e.g., 1.05 -> "+5%"
+                    pct = int(round((float(voice_speed) - 1.0) * 100))
+                    rate = f"{pct:+d}%"
+                except Exception:
+                    rate = "+5%"
+            else:
+                rate = voice_cfg_profile.get("rate") or voice_cfg.get("rate") or "+5%"
+                
+            pitch = voice_cfg_profile.get("pitch") or voice_cfg.get("pitch") or "+0Hz"
+        else:
+            voice_name = voice_cfg.get("name", "en-US-GuyNeural")
+            rate = voice_cfg.get("rate", "+5%")
+            pitch = voice_cfg.get("pitch", "+0Hz")
 
         print(f"Generating voiceover with voice: {voice_name} (rate: {rate}, pitch: {pitch})...")
         
@@ -136,6 +161,8 @@ class MediaProcessor:
                     # Detect correct pool based on title keyword, else query keyword
                     check_text = title if title else query
                     fallbacks = self._detect_military_pool(check_text)
+                elif profile and "pexels_queries" in profile:
+                    fallbacks = profile["pexels_queries"]
                 else:
                     fallbacks = ["military jet", "fighter jet", "stealth aircraft", "aircraft carrier launch", "military aircraft cockpit"]
                 

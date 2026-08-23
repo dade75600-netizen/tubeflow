@@ -1,0 +1,60 @@
+name: TubeFlow Wealth Engine Pipeline
+
+on:
+  schedule:
+    - cron: '30 6 * * *'   # 06:30 UTC
+    - cron: '30 12 * * *'  # 12:30 UTC
+    - cron: '30 17 * * *'  # 17:30 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: wealth-pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install System Dependencies (FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute Wealth Engine Automation
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_CLIENT_SECRETS: ${{ secrets.YOUTUBE_CLIENT_SECRETS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_TOKEN_WEALTH_ENGINE: ${{ secrets.YOUTUBE_TOKEN_WEALTH_ENGINE || secrets.YOUTUBE_TOKEN_JSON_WEALTH }}
+          YOUTUBE_TOKEN_JSON:  ${{ secrets.YOUTUBE_TOKEN_WEALTH_ENGINE || secrets.YOUTUBE_TOKEN_JSON_WEALTH }}
+          CHANNEL_CONFIG: "backend/config/channels/wealth_engine.json"
+        run: |
+          python -m backend.main --config "$CHANNEL_CONFIG"
+
+      - name: Commit and push queue updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add topics_queue_wealth_engine.txt topics_done.txt video_history.txt music_history.txt
+          git commit -m "Update wealth engine topics queue and history [skip ci]" || echo "No changes to commit"
+          git push

@@ -10,8 +10,8 @@ from googleapiclient.discovery import build
 from backend.services.youtube_publisher import YouTubePublisher
 
 class AnalyticsEngine:
-    def __init__(self):
-        self.publisher = YouTubePublisher()
+    def __init__(self, token_env_var: str = "YOUTUBE_TOKEN_JSON"):
+        self.publisher = YouTubePublisher(token_env_var=token_env_var)
 
     def fetch_recent_metrics(self, max_results: int = 15) -> list:
         """
@@ -22,7 +22,7 @@ class AnalyticsEngine:
         if not self.publisher.is_authorized():
             raise PermissionError("YouTube channel is not authorized. Cannot fetch analytics.")
             
-        youtube = build('youtube', 'v3', credentials=self.publisher.credentials)
+        youtube = self.publisher.get_service()
         
         # 1. Get the channel's uploaded videos playlist ID
         channel_response = youtube.channels().list(

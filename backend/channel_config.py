@@ -8,6 +8,7 @@ CHANNEL_CONFIGS = {
         "bg_pool": "military_combat",
         "title_formula": "dramatic_revelation",
         "video_duration_target": 105,  # seconds
+        "token_env_var": "YOUTUBE_TOKEN_MILITARY",
     },
     "aviation": {
         "channel_handle": "@CivilAviationLords", 
@@ -18,5 +19,6 @@ CHANNEL_CONFIGS = {
         "bg_pool": "aviation_dramatic",
         "title_formula": "technical_drama",
         "video_duration_target": 90, # seconds
+        "token_env_var": "YOUTUBE_TOKEN_CIVIL_AVIATION",
     }
 }

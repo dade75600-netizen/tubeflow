@@ -52,6 +52,14 @@ AVIATION_POOL = [
     "EMERGENCY!", "NO SURVIVORS"
 ]
 
+# ── Wealth punchline pool ─────────────────────────────────────────────────────
+WEALTH_POOL = [
+    "GETTING RICH", "MONEY SECRET", "WEALTH ENGINE",
+    "THE HUSTLE", "FINANCE SECRETS", "HIGH CPM TRICK",
+    "CASH FLOW", "PASSIVE INCOME", "DIRTY RICH",
+    "SECRET PORTFOLIO", "PSYCHOLOGY OF MONEY"
+]
+
 
 class FirstFrameEngineer:
     """
@@ -84,20 +92,36 @@ class FirstFrameEngineer:
 
     def _select_punchline(self, topic: str, profile: dict = None) -> str:
         tone = (profile or {}).get("script_tone", "classified_documentary")
-        pool = AVIATION_POOL if tone == "aviation_documentary" else MILITARY_POOL
+        niche = (profile or {}).get("niche", "").lower()
+        
+        if tone == "aviation_documentary" or "aviation" in niche:
+            pool = AVIATION_POOL
+        elif "wealth" in niche or "finance" in niche or "money" in niche:
+            pool = WEALTH_POOL
+        else:
+            pool = MILITARY_POOL
+            
         idx = sum(ord(c) for c in topic) % len(pool)
         return pool[idx]
 
     # ── Pexels background fetcher (portrait / vertical) ───────────────────────
 
-    def _fetch_pexels_background(self, topic: str, is_military: bool) -> Image.Image | None:
+    def _fetch_pexels_background(self, topic: str, is_military: bool, profile: dict = None) -> Image.Image | None:
         if not self.pexels_key:
             return None
 
         cleaned = re.sub(r"[^a-zA-Z0-9\s]", "", topic).strip()
         keywords = " ".join(cleaned.split()[:4])
-        suffix   = " night dark" if is_military else ""
-        query    = f"{keywords}{suffix}"
+        
+        niche = (profile or {}).get("niche", "").lower()
+        if "wealth" in niche or "finance" in niche or "money" in niche:
+            suffix = " dark luxury finance"
+        elif is_military:
+            suffix = " night dark"
+        else:
+            suffix = ""
+            
+        query = f"{keywords}{suffix}"
 
         try:
             url = (
@@ -328,7 +352,7 @@ class FirstFrameEngineer:
         print(f"[FirstFrame] Generating hook frame: [Punchline: {punch_text}] for '{topic}'")
 
         # 1. Background
-        raw = self._fetch_pexels_background(topic, is_military)
+        raw = self._fetch_pexels_background(topic, is_military, profile)
         if raw:
             bg = self._process_background(raw)
         else:

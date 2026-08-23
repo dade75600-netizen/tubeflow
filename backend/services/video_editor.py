@@ -210,9 +210,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         hook_duration = 1.5  # seconds
 
         if has_hook:
-            # -loop 1 forces ffmpeg to treat the image as a looped video source
-            cmd.extend(["-loop", "1", "-t", str(hook_duration),
-                        "-i", first_frame_path])
+            cmd.extend(["-loop", "1", "-t", str(hook_duration), "-i", first_frame_path])
 
         # B-roll clips (one per scene)
         for path in clips_paths:
@@ -254,10 +252,10 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         video_labels = []
 
-        # Hook frame: scale to 9:16, ensure correct format
+        # Hook frame: scale to 9:16, crop, ensure correct format
         if has_hook:
             fc.append(
-                f"[0:v]scale=1080:1920,setsar=1,"
+                f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,"
                 f"fps=30,format=yuv420p[v_hook]"
             )
             video_labels.append("[v_hook]")
@@ -274,7 +272,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         n_segments    = len(video_labels)
         fc.append(f"{concat_inputs}concat=n={n_segments}:v=1:a=0[v_concat]")
 
-        # Burn subtitles (Alignment=5 = center screen)
+        # Burn subtitles
         if os.path.exists(ass_path):
             escaped_ass = ass_path.replace("\\", "/").replace(":", "\\:")
             fc.append(f"[v_concat]subtitles='{escaped_ass}'[v_final]")
@@ -283,12 +281,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             fc.append("[v_concat]copy[v_final]")
 
         # ─── Audio Mixing Engine ─────────────────────────────────────────
-        # We ensure that the main voiceover is the FIRST input to amix, 
-        # so duration=first acts as the master clock, preventing infinite BGM loops.
         audio_inputs = []
 
         if has_hook:
-            # Pad voiceover start by hook_duration so it lines up after hook
             fc.append(
                 f"[{voice_idx}:a]adelay={int(hook_duration * 1000)}|"
                 f"{int(hook_duration * 1000)}[voice_delayed]"
@@ -298,7 +293,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             audio_inputs.append(f"[{voice_idx}:a]")
 
         if bg_enabled:
-            # Duck BGM aggressively to allow voice to dominate
             bg_volume = 0.12
             fc.append(f"[{bg_idx}:a]volume={bg_volume}[bg_music]")
             audio_inputs.append("[bg_music]")
@@ -317,10 +311,11 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             )
             audio_inputs.append("[impact_trim]")
 
+        # Requisito 4: Anti-Freeze Audio (Gestione esplicita single/multi audio)
         if len(audio_inputs) == 1:
             fc.append(f"{audio_inputs[0]}anull[a_final]")
         else:
-            fc.append(f"".join(audio_inputs) + f"amix=inputs={len(audio_inputs)}:duration=first:dropout_transition=0[a_final]")
+            fc.append("".join(audio_inputs) + f"amix=inputs={len(audio_inputs)}:duration=first:dropout_transition=0[a_final]")
 
         # ── Assemble full command ────────────────────────────────────────
         cmd.extend(["-filter_complex", "; ".join(fc)])
@@ -341,20 +336,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         print(f"Compiling video to {output_path} (Hook: {has_hook}, Clips: {num_clips}, Audio streams: {len(audio_inputs)})...", flush=True)
         print(f"[DEBUG] FULL FFmpeg cmd: {' '.join(cmd)}")
-        # Comando pulito, senza interazioni e sovrascrittura forzata
-        cmd.insert(1, '-y')
-        if '-nostdin' not in cmd:
-            cmd.insert(2, '-nostdin')
 
         print(f">>> Esecuzione FFmpeg pulita avviata...")
         try:
-            # Esecuzione standard, catturiamo l'output per i log in caso di errore, 
-            # ma senza intasare i buffer (usiamo capture_output)
-            result = subprocess.run(
+            # Requisito 1: Anti-Deadlock (stdout/stderr DEVNULL, check=True)
+            subprocess.run(
                 cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                text=True,
                 check=True
             )
             print(">>> Compilazione FFmpeg completata con successo!")
@@ -367,6 +356,4 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             return True
         except subprocess.CalledProcessError as e:
             print(f"!!! ERRORE CRITICO FFMPEG (Codice {e.returncode}) !!!")
-            print(f"STDOUT:\n{e.stdout[-1000:] if e.stdout else 'Nessuno'}")
-            print(f"STDERR:\n{e.stderr[-2000:] if e.stderr else 'Nessuno'}")
             raise RuntimeError("Pipeline interrotta per errore FFmpeg")

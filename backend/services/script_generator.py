@@ -73,6 +73,16 @@ class VideoScript(BaseModel):
         description="Ordered list of scenes (10-11 total) composing the Short."
     )
 
+class StrictScriptSegment(BaseModel):
+    text: str = Field(description="The voiceover text/narration for this transition segment (8-14 words).")
+    visual_keyword: str = Field(description="A specific, high-conversion visual search query keyword for Pexels (3-6 words).")
+
+class StrictVideoScript(BaseModel):
+    title: str = Field(description="SEO-optimized click-worthy YouTube Short title.")
+    description: str = Field(description="SEO-optimized description starting with #Shorts.")
+    tags: List[str] = Field(description="SEO tags starting with 'Shorts' and 'YouTubeShorts'.")
+    segments: List[StrictScriptSegment] = Field(description="Chronological segments of the script (10-11 total).")
+
 # ─── Generator class ─────────────────────────────────────────────────────────
 class ScriptGenerator:
     def __init__(self, api_key: str = None, config_path: str = "config.yaml"):
@@ -92,10 +102,51 @@ class ScriptGenerator:
                 return yaml.safe_load(f) or {}
         return {}
 
+    def _dynamic_prompt(self, topic: str, profile: dict) -> str:
+        channel_name = profile.get("channel_id") or profile.get("channel_handle") or "wealth_engine"
+        niche = profile.get("niche") or "personal finance and wealth psychology"
+        target_audience = profile.get("target_audience") or "high CPM viewers interested in wealth creation"
+        pexels_queries = ", ".join(profile.get("pexels_queries", ["luxury lifestyle", "wealth", "finance"]))
+        
+        # Timeline rules from config
+        hook_rule = "0-3s: Hook (date, shocking number, or question to grab attention)"
+        core_rule = "3-40s: Core story (highly educational, dark psychological facts, money principles)"
+        loop_rule = "40-50s: Seamless Loop (the last sentence is incomplete and flows perfectly into the first word of the video)"
+        
+        rules = f"""- Hook: {hook_rule}
+- Core: {core_rule}
+- Loop: {loop_rule}"""
+
+        prompt = f"""You are the lead scriptwriter for the YouTube Shorts channel '{channel_name}' focusing on the niche: '{niche}'.
+Target Audience: {target_audience}
+Topic: "{topic}"
+
+YOUR MISSION: Write a loop-able, highly engaging YouTube Short script.
+
+═══════════ ABSOLUTE HARD RULES ═══════════
+1. SCRIPTING TIMELINE & RULES:
+{rules}
+2. SEGMENT PACING: Split the script into segments. Each segment narration is 8-14 words max.
+   Each segment duration MUST correspond to 3-5 seconds of voiceover (approx. 2-3 words per second).
+3. NO INTRO / NO OUTRO: Start with the hook immediately. Do not write "Welcome", "Subscribe", or any fillers.
+4. STOCK FOOTAGE: Each segment needs a specific, high-conversion visual keyword search query for Pexels (3-6 words).
+   Focus on these visual motifs: [{pexels_queries}]. Do not use generic keywords.
+5. LANGUAGE: English only.
+
+═══════════ OUTPUT FORMAT ═══════════
+Return a StrictVideoScript JSON object containing:
+- title: Click-worthy title under 60 characters with 1 emoji, NO hashtags.
+- description: SEO-optimized description starting with #Shorts.
+- tags: List of 8-12 tags starting with 'Shorts' and 'YouTubeShorts'.
+- segments: List of chronological segments with 'text' and 'visual_keyword'.
+"""
+        return prompt
+
     def generate_script(self, topic: str, profile: dict = None) -> VideoScript:
         """
         Generates a structured Shorts script (max 140 words, 50-55s) with
-        a seamless loop ending. Uses Gemini 2.5 Flash with structured JSON output.
+        a seamless loop ending. Uses Gemini 2.5 Flash.
+        If profile is dynamic, uses StrictVideoScript schema and maps it.
         """
         if not self.client:
             raise ValueError(
@@ -109,6 +160,52 @@ class ScriptGenerator:
         # Shorts: fixed 10 scenes × ~5s = ~50s, max 140 words total
         num_scenes = 10
         target_duration = 52  # seconds
+
+        is_dynamic = profile and ("channel_id" in profile or "niche" in profile)
+
+        if is_dynamic:
+            prompt = self._dynamic_prompt(topic, profile)
+            print(f"Generating dynamic Shorts script for: '{topic}' using niche: '{profile.get('niche')}'...")
+            
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=StrictVideoScript,
+                    temperature=0.85,
+                ),
+            )
+            
+            try:
+                strict_data = json.loads(response.text)
+                strict_script = StrictVideoScript(**strict_data)
+                
+                # Convert StrictVideoScript to standard VideoScript format
+                scenes = []
+                voiceover_text = " ".join(seg.text for seg in strict_script.segments)
+                
+                # Average duration per scene
+                avg_duration = round(target_duration / max(len(strict_script.segments), 1), 1)
+                for idx, seg in enumerate(strict_script.segments):
+                    scenes.append(ScriptScene(
+                        scene_number=idx + 1,
+                        narration=seg.text,
+                        duration=avg_duration,
+                        search_query=seg.visual_keyword
+                    ))
+                
+                return VideoScript(
+                    title=strict_script.title,
+                    description=strict_script.description,
+                    tags=strict_script.tags,
+                    voiceover_text=voiceover_text,
+                    scenes=scenes
+                )
+            except Exception as e:
+                print(f"Error parsing Gemini response: {e}")
+                print(f"Raw response: {response.text}")
+                raise e
 
         tone = (profile or {}).get("script_tone", "classified_documentary")
 
@@ -131,8 +228,8 @@ class ScriptGenerator:
                 response_mime_type="application/json",
                 response_schema=VideoScript,
                 temperature=0.85,
-            ),
-        )
+                ),
+            )
 
         try:
             script_data = json.loads(response.text)

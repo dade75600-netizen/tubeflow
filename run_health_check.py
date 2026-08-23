@@ -9,8 +9,7 @@ def check_env_vars():
     
     keys_to_check = [
         "GEMINI_API_KEY",
-        "PEXELS_API_KEY",
-        "YOUTUBE_TOKEN_JSON"
+        "PEXELS_API_KEY"
     ]
     
     all_ok = True
@@ -22,9 +21,14 @@ def check_env_vars():
             print(f"[ERROR] {key} MANCANTE o vuota.")
             all_ok = False
             
-    # Check discrepancy between .env template and youtube_publisher
-    if os.getenv("YOUTUBE_TOKEN_FILE") and not os.getenv("YOUTUBE_TOKEN_JSON"):
-        print("[WARNING] Trovato YOUTUBE_TOKEN_FILE ma manca YOUTUBE_TOKEN_JSON. youtube_publisher.py richiede YOUTUBE_TOKEN_JSON.")
+    # Check YouTube tokens
+    yt_keys = ["YOUTUBE_TOKEN_JSON", "YOUTUBE_TOKEN_CIVIL_AVIATION", "YOUTUBE_TOKEN_MILITARY"]
+    found_yt = [k for k in yt_keys if os.getenv(k)]
+    if found_yt:
+        print(f"[OK] Trovate variabili token YouTube: {', '.join(found_yt)}")
+    else:
+        print("[ERROR] Nessuna variabile token YouTube trovata (YOUTUBE_TOKEN_JSON, YOUTUBE_TOKEN_CIVIL_AVIATION, o YOUTUBE_TOKEN_MILITARY).")
+        all_ok = False
         
     return all_ok
 
@@ -69,15 +73,22 @@ def check_class_initialization():
 
     try:
         from backend.services.youtube_publisher import YouTubePublisher
+        # Determine which environment variable to use for check
+        target_env = "YOUTUBE_TOKEN_JSON"
+        for k in ["YOUTUBE_TOKEN_MILITARY", "YOUTUBE_TOKEN_CIVIL_AVIATION", "YOUTUBE_TOKEN_JSON"]:
+            if os.getenv(k):
+                target_env = k
+                break
         try:
-            # It will sys.exit(1) if YOUTUBE_TOKEN_JSON is missing/invalid.
-            # We catch SystemExit to not break the health check.
-            pub = YouTubePublisher()
-            print("[OK] YouTubePublisher inizializzato correttamente.")
-        except SystemExit as e:
-            print(f"[WARNING] YouTubePublisher ha interrotto l'esecuzione (codice {e}). Questo accade se il token manca o è scaduto, come previsto dall'approccio statico.")
+            pub = YouTubePublisher(token_env_var=target_env)
+            if pub.is_authorized():
+                print(f"[OK] YouTubePublisher inizializzato correttamente (caricato da {target_env}).")
+            else:
+                print(f"[WARNING] YouTubePublisher inizializzato da {target_env} ma non è autorizzato.")
+        except Exception as e:
+            print(f"[WARNING] Inizializzazione YouTubePublisher fallita per {target_env}: {e}")
     except Exception as e:
-        print(f"[ERROR] YouTubePublisher crash in inizializzazione: {e}")
+        print(f"[ERROR] YouTubePublisher crash in import/struttura: {e}")
         
     try:
         from backend.services.script_generator import ScriptGenerator

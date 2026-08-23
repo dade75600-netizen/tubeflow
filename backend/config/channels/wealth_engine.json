@@ -1,0 +1,21 @@
+{
+  "channel_id": "wealth_engine",
+  "niche": "High-Ticket Finance & Money Psychology",
+  "target_audience": "Tier 1 (US, UK, CA, AU) High CPM",
+  "pexels_queries": [
+    "dark luxury office",
+    "stock trading screen close up",
+    "counting hundred dollar bills",
+    "vault safe opening",
+    "man in expensive suit",
+    "city skyline night cinematic"
+  ],
+  "audio_config": {
+    "background_music_volume": 0.08,
+    "voice_speed": 1.05,
+    "voice_name": "en-US-ChristopherNeural"
+  },
+  "metadata_defaults": {
+    "tags": ["wealth", "finance", "money", "investing", "rich", "mindset", "shorts"]
+  }
+}

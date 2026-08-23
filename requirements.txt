@@ -8,9 +8,10 @@ requests
 pillow
 edge-tts
 google-genai
-google-api-python-client
+google-auth
 google-auth-oauthlib
 google-auth-httplib2
+google-api-python-client
 httpx
 jinja2
 python-multipart

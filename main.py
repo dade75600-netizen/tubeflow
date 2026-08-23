@@ -369,12 +369,27 @@ def get_channel_name():
 
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
-    try:
-        publisher = YouTubePublisher()
-        authorized = publisher.is_authorized()
-    except SystemExit:
-        authorized = False
     channel_name = get_channel_name()
+    channel_name_lower = channel_name.lower()
+    
+    # Determine target env var based on channel name
+    if "aviation" in channel_name_lower or "civil" in channel_name_lower or "lords" in channel_name_lower:
+        token_env_var = "YOUTUBE_TOKEN_CIVIL_AVIATION"
+    elif "military" in channel_name_lower:
+        token_env_var = "YOUTUBE_TOKEN_MILITARY"
+    else:
+        token_env_var = "YOUTUBE_TOKEN_JSON"
+
+    # Fallback to YOUTUBE_TOKEN_JSON if specific target variable is missing but general exists
+    if not os.getenv(token_env_var) and os.getenv("YOUTUBE_TOKEN_JSON"):
+        token_env_var = "YOUTUBE_TOKEN_JSON"
+
+    try:
+        publisher = YouTubePublisher(token_env_var=token_env_var)
+        authorized = publisher.is_authorized()
+    except Exception as e:
+        print(f"[Dashboard] Error initializing YouTubePublisher for {token_env_var}: {e}")
+        authorized = False
 
     # Load queue content
     queue_content = ""
@@ -394,13 +409,12 @@ def read_root(request: Request):
         history_items = "<li>No videos generated yet.</li>"
 
     # Build auth section
-    secrets_file = os.getenv("YOUTUBE_SECRETS_FILE", "client_secrets.json")
     if authorized:
         badge_class = "connected"
         status_text = "Authorized"
-        auth_section = """
+        auth_section = f"""
         <p style="color:var(--text-secondary);font-size:0.95rem;">
-            Your YouTube channel is successfully connected. The automation pipeline has full upload permissions.
+            Your YouTube channel is successfully connected via environment variable <code>{token_env_var}</code>. The automation pipeline has full upload permissions.
         </p>
         <button class="btn" style="background:rgba(52,211,153,0.2);color:var(--accent-green);cursor:default;border:1px solid var(--accent-green);">&#x2713; Channel Ready</button>
         """
@@ -409,9 +423,12 @@ def read_root(request: Request):
         status_text = "Not Connected"
         auth_section = f"""
         <p style="color:var(--text-secondary);font-size:0.95rem;">
-            Before uploading videos, link your YouTube channel. Make sure <code>{secrets_file}</code> is in the project root folder.
+            Before uploading videos, you must set the environment variable <code>{token_env_var}</code> in your <code>.env</code> file or CI/CD environment with the JSON credentials payload.
         </p>
-        <a href="/api/youtube/authorize" class="btn">&#x1F517; Link YouTube Channel</a>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.8rem;">
+            Generate the permanent token offline by running:<br>
+            <code style="background:rgba(255,255,255,0.08);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px;font-family:monospace;color:var(--accent-purple);">python scripts/generate_youtube_token.py</code>
+        </p>
         """
 
     # TikTok Auth Status
@@ -451,51 +468,7 @@ def read_root(request: Request):
     return html
 
 
-@app.get("/api/youtube/authorize")
-def authorize(request: Request):
-    """Initiates the Google OAuth2 web flow."""
-    publisher = YouTubePublisher()
-    redirect_uri = f"{request.base_url}oauth2callback"
-    try:
-        auth_url, _ = publisher.get_auth_url(redirect_uri)
-        return RedirectResponse(auth_url)
-    except Exception as e:
-        return HTMLResponse(
-            content=(
-                f"<h3 style='font-family:sans-serif;color:#f87171;'>Error initializing OAuth flow</h3>"
-                f"<p style='font-family:sans-serif;'>{str(e)}</p>"
-                f"<p style='font-family:sans-serif;'>Make sure you downloaded <b>client_secrets.json</b> "
-                f"(Desktop App type) from Google Cloud Console and placed it in the project root.</p>"
-            ),
-            status_code=500,
-        )
 
-
-@app.get("/oauth2callback")
-def oauth2callback(request: Request, code: str = None, error: str = None):
-    """Callback from Google after user authorizes."""
-    if error:
-        return HTMLResponse(content=f"<h3>OAuth error</h3><p>{error}</p>", status_code=400)
-    if not code:
-        return HTMLResponse(content="<h3>Missing OAuth authorization code</h3>", status_code=400)
-
-    publisher = YouTubePublisher()
-    redirect_uri = f"{request.base_url}oauth2callback"
-    try:
-        publisher.fetch_token(redirect_uri, str(request.url))
-        return HTMLResponse(content="""
-        <div style="font-family:sans-serif;text-align:center;margin-top:100px;padding:2rem;">
-            <h2 style="color:#34d399;">&#x2714; YouTube Authorization Successful!</h2>
-            <p style="color:#64748b;margin-top:1rem;">
-                Your channel is now linked. Go back to the
-                <a href="/" style="color:#818cf8;">Dashboard</a>.
-            </p>
-        </div>
-        """)
-    except Exception as e:
-        return HTMLResponse(
-            content=f"<h3>Token exchange failed</h3><p>{str(e)}</p>", status_code=500
-        )
 
 
 @app.get("/tiktok_callback")
